@@ -266,24 +266,25 @@ function Loader() {
 
 function BottomNav({ view, setView }) {
   const navItems = [
-    { key: 'dashboard', Icon: BarChart3, label: 'Dashboard' },
-    { key: 'activities', Icon: Calendar, label: 'Actividades' },
-    { key: 'participants', Icon: Users, label: 'Jugadores' },
+    { key: 'dashboard', Icon: BarChart3 },
+    { key: 'activities', Icon: Calendar },
+    { key: 'participants', Icon: Users },
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-surface border-t border-surface-dark flex z-50">
-      {navItems.map(({ key, Icon, label }) => (
+    <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-white rounded-2xl shadow-lg shadow-black/10 border border-surface-dark flex z-50 px-3 py-2 pb-safe">
+      {navItems.map(({ key, Icon }) => (
         <button
           key={key}
           onClick={() => setView(key)}
           className={cn(
-            'flex-1 py-3 bg-none border-none cursor-pointer flex flex-col items-center gap-1',
-            view === key ? 'text-primary' : 'text-text-muted'
+            'relative p-2.5 rounded-xl transition-all duration-200',
+            view === key 
+              ? 'text-primary bg-primary/10' 
+              : 'text-text-muted hover:text-dark'
           )}
         >
-          <Icon className="w-6 h-6" />
-          <span className="text-xs font-bold">{label}</span>
+          <Icon className="w-5 h-5" />
         </button>
       ))}
     </nav>
@@ -349,11 +350,11 @@ function Dashboard({ db }) {
 
   return (
     <div>
-      <div className="bg-primary text-white p-6 pb-4">
-        <div className="text-4xl font-black tracking-tight" style={{ fontFamily: 'ClashGrotesk, sans-serif' }}>ACTIVADOS</div>
-        <h1 className="text-2xl font-bold mt-1 opacity-80">Dashboard</h1>
+      <div className="bg-primary text-white p-4 pb-3">
+        <div className="text-3xl font-black tracking-tight" style={{ fontFamily: 'ClashGrotesk, sans-serif' }}>ACTIVADOS</div>
+        <h1 className="text-lg font-bold mt-1 opacity-80">Dashboard</h1>
 
-        <div className="grid grid-cols-2 gap-3 mt-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
           <div className="bg-white/10 rounded-xl p-3 text-center border border-white/20">
             <div className="text-2xl font-black text-accent">{activities.length}</div>
             <div className="text-xs font-bold opacity-60">Actividades</div>
@@ -403,7 +404,7 @@ function Dashboard({ db }) {
           <Section icon={Trophy} title="Top Goleadores" style={{ marginBottom: 0 }} />
           <button
             onClick={() => setShowTopGoleadores(!showTopGoleadores)}
-            className="w-10 h-10 rounded-xl bg-white border border-surface-dark flex items-center justify-center text-primary active:scale-95 transition-transform"
+            className="w-11 h-11 rounded-xl bg-white border border-surface-dark flex items-center justify-center text-primary active:scale-95 transition-transform"
           >
             {showTopGoleadores ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
           </button>
@@ -458,7 +459,7 @@ function Dashboard({ db }) {
           <Section icon={Trophy} title="Ranking Individual" style={{ marginBottom: 0 }} />
           <button
             onClick={() => setShowRanking(!showRanking)}
-            className="w-10 h-10 rounded-xl bg-white border border-surface-dark flex items-center justify-center text-primary active:scale-95 transition-transform"
+            className="w-11 h-11 rounded-xl bg-white border border-surface-dark flex items-center justify-center text-primary active:scale-95 transition-transform"
           >
             {showRanking ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
           </button>
@@ -624,11 +625,11 @@ function ActivityView({ db, act, onEdit, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-background z-50 overflow-y-auto">
-      <div className="bg-primary text-white p-5 sticky top-0 z-10">
-        <div className="flex items-center gap-3 mb-4">
+      <div className="bg-primary text-white p-4 sticky top-0 z-10">
+        <div className="flex items-center gap-3 mb-3">
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-lg bg-white/20 border-none text-white text-lg cursor-pointer"
+            className="w-11 h-11 rounded-xl bg-white/20 border-none text-white text-lg flex items-center justify-center"
           >
             ←
           </button>
@@ -853,7 +854,7 @@ function ActivityView({ db, act, onEdit, onClose }) {
               </div>
               <button
                 onClick={() => setShowScorers(!showScorers)}
-                className="w-10 h-10 rounded-xl bg-white border border-surface-dark flex items-center justify-center text-primary active:scale-95 transition-transform"
+                className="w-11 h-11 rounded-xl bg-white border border-surface-dark flex items-center justify-center text-primary active:scale-95 transition-transform"
               >
                 {showScorers ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
@@ -926,7 +927,7 @@ function ActivitiesList({ db, onView, onNew, onEdit, onDelete }) {
     <div>
       <PageHeader title="Actividades" sub={`${db.activities.length} registradas`} />
       <div className="p-4">
-        <button onClick={onNew} className="w-full py-4 bg-primary text-white font-bold text-base rounded-xl border-none cursor-pointer mb-4">
+        <button onClick={onNew} className="w-full py-4 bg-primary text-white font-bold text-base rounded-xl border-none cursor-pointer mb-4 min-h-[52px]">
           + Nueva Actividad
         </button>
         {sorted.length === 0 ? (
@@ -950,13 +951,13 @@ function ActivitiesList({ db, onView, onNew, onEdit, onDelete }) {
                         e.stopPropagation();
                         onEdit(a);
                       }}
-                      className="w-8 h-8 rounded-lg bg-surface-dark border-none cursor-pointer flex items-center justify-center text-primary"
+                      className="w-11 h-11 rounded-xl bg-surface-dark border-none cursor-pointer flex items-center justify-center text-primary"
                     >
                       <Pencil className="w-4 h-4" />
                     </button>
                     <button
                       onClick={(e) => del(a.id, e)}
-                      className="w-8 h-8 rounded-lg bg-red-100 border-none cursor-pointer flex items-center justify-center text-red-500"
+                      className="w-11 h-11 rounded-xl bg-red-100 border-none cursor-pointer flex items-center justify-center text-red-500"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -968,7 +969,7 @@ function ActivitiesList({ db, onView, onNew, onEdit, onDelete }) {
                   <Chip icon={Award} val={(a.partidos || []).length} label="partidos" />
                   <Chip icon={Trophy} val={(a.goles || []).reduce((s, g) => s + g.cant, 0)} label="goles" />
                 </div>
-                <div className="grid grid-cols-4 gap-1 p-3 pt-0">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-1 p-3 pt-0">
                   {TEAMS.map((t) => {
                     const n = Object.entries(a.equipos || {}).filter(([pid, eq]) => eq === t && a.asistentes.includes(Number(pid))).length;
                     return (
@@ -1046,7 +1047,7 @@ function ParticipantsList({ db, onNew, onEdit, onDelete, onViewDetail }) {
       <div className="p-4 pt-0">
         <button
           onClick={onNew}
-          className="w-full py-3 bg-accent text-dark font-bold text-base rounded-xl border-none cursor-pointer mb-3 flex items-center justify-center gap-2"
+          className="w-full py-4 bg-accent text-dark font-bold text-base rounded-xl border-none cursor-pointer mb-3 flex items-center justify-center gap-2 min-h-[52px]"
         >
           <Plus className="w-5 h-5" />
           Agregar Jugador
@@ -1132,16 +1133,16 @@ function ParticipantsList({ db, onNew, onEdit, onDelete, onViewDetail }) {
                     <div className="font-black text-xl">{p.total}</div>
                     <div className="text-xs text-text-muted">pts</div>
                   </div>
-                  <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                     <button
                       onClick={() => onEdit(p)}
-                      className="w-8 h-8 rounded-lg bg-surface-dark border-none cursor-pointer flex items-center justify-center text-primary"
+                      className="w-11 h-11 rounded-xl bg-surface-dark border-none cursor-pointer flex items-center justify-center text-primary"
                     >
                       <Pencil className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => del(p.id)}
-                      className="w-8 h-8 rounded-lg bg-red-100 border-none cursor-pointer flex items-center justify-center text-red-500"
+                      className="w-11 h-11 rounded-xl bg-red-100 border-none cursor-pointer flex items-center justify-center text-red-500"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -1357,12 +1358,12 @@ function ActivityForm({ db, initial, onClose, onSave, onQuickUpdate, onSaveParti
   }[saveStatus];
 
   return (
-    <div className="fixed inset-0 bg-background z-50 overflow-y-auto pb-20">
-      <div className="bg-surface-dark p-4 sticky top-0 z-10">
-        <div className="flex items-center gap-3 mb-3">
+    <div className="fixed inset-0 bg-background z-50 overflow-y-auto pb-28">
+      <div className="bg-surface-dark p-3 sticky top-0 z-10">
+        <div className="flex items-center gap-3 mb-2">
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-lg bg-surface-dark border border-surface-dark text-dark text-lg cursor-pointer flex items-center justify-center"
+            className="w-11 h-11 rounded-xl bg-surface-dark border border-surface-dark text-dark text-lg cursor-pointer flex items-center justify-center"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
@@ -1516,7 +1517,7 @@ function TabAsistencia({ act, A, Q, db, onSaveParticipant }) {
             <Label style={{ margin: 0 }}>Nuevo Jugador</Label>
             <button onClick={() => setShowNewPlayer(false)} className="text-text-muted"><X /></button>
           </div>
-          <div className="grid grid-cols-2 gap-2 mb-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
             <input
               value={newPlayer.nombre}
               onChange={(e) => setNewPlayer(p => ({ ...p, nombre: e.target.value }))}
@@ -1751,7 +1752,7 @@ function TabEquipos({ act, A, Q, db }) {
           </div>
 
           {/* Summary row */}
-          <div className="grid grid-cols-4 gap-2 mb-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
             {teamStats.map(({ team, total, m, f }) => (
               <div
                 key={team}
@@ -1863,7 +1864,7 @@ function TeamTableViewReadOnly({ act, participants }) {
           ⚠ {unassigned} jugador{unassigned > 1 ? 'es' : ''} sin equipo asignado
         </div>
       )}
-      <div className="overflow-x-auto rounded-xl border border-surface-dark">
+      <div className="overflow-x-auto rounded-xl border border-surface-dark table-wrapper">
         <table className="w-full border-collapse text-sm" style={{ minWidth: TEAMS.length * 110 }}>
           <thead>
             <tr>
@@ -2006,7 +2007,7 @@ function TeamTableView({ act, db }) {
         <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
         <span className="text-xs text-text-muted">Actualización automática cada 3s</span>
       </div>
-      <div className="overflow-x-auto rounded-xl border border-surface-dark">
+      <div className="overflow-x-auto rounded-xl border border-surface-dark table-wrapper">
         <table className="w-full border-collapse text-sm" style={{ minWidth: TEAMS.length * 110 }}>
           <thead>
             <tr>
@@ -2195,7 +2196,7 @@ function JuegoCard({ j, gi, onNombre, onDel, onPos }) {
         />
         <button
           onClick={onDel}
-          className="w-7 h-7 rounded-lg bg-red-50 border-none text-red-500 cursor-pointer"
+          className="w-11 h-11 rounded-xl bg-red-50 border-none text-red-500 cursor-pointer flex items-center justify-center"
         >
           ✕
         </button>
@@ -2553,7 +2554,7 @@ function PartidoCard({ part, onDel, onUpd, act, A, Q, db }) {
               </button>
             ))}
           </div>
-          <button onClick={onDel} className="w-8 h-8 rounded-lg bg-red-100 border-none text-red-500 cursor-pointer flex-shrink-0 flex items-center justify-center ml-2">
+          <button onClick={onDel} className="w-11 h-11 rounded-xl bg-red-100 border-none text-red-500 cursor-pointer flex-shrink-0 flex items-center justify-center ml-2">
             ✕
           </button>
         </div>
@@ -2621,7 +2622,7 @@ function PartidoCard({ part, onDel, onUpd, act, A, Q, db }) {
         </div>
 
         {/* Scorers List */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[part.eq1, part.eq2].map((team, idx) => (
             <div key={team} className="flex flex-col gap-1">
               <div className="text-[9px] font-bold text-text-muted uppercase mb-1">Goleadores {team}</div>
@@ -2689,7 +2690,7 @@ function TabInvitados({ act, A, db, onSaveParticipant, onUpdateAct }) {
                 ✕
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-2 mt-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
               <div>
                 <Label>Nombre</Label>
                 <input
@@ -2888,17 +2889,12 @@ function TabGoles({ act, A, Q, db }) {
                 ['f', 'F'],
                 ['h', 'H'],
                 ['b', 'B'],
-              ].map(([t, label]) => (
-                <button
-                  key={t}
-                  onClick={() => upd(g.id, 'tipo', t)}
-                  className="w-9 h-9 rounded-lg cursor-pointer text-sm font-bold"
-                  style={{
-                    border: `1px solid ${g.tipo === t ? '#FFD93D44' : '#e5e5e5'}`,
-                    backgroundColor: g.tipo === t ? '#FFD93D22' : '#f5f5f5',
-                    color: g.tipo === t ? '#1a1a1a' : '#999',
-                  }}
-                >
+                ].map(([t, label]) => (
+                  <button
+                    key={t}
+                    onClick={() => upd(g.id, 'tipo', t)}
+                    className="w-11 h-11 rounded-xl cursor-pointer text-sm font-bold flex items-center justify-center"
+                  >
                   {label}
                 </button>
               ))}
@@ -2913,11 +2909,11 @@ function TabGoles({ act, A, Q, db }) {
               </button>
             </div>
             {g.matchId ? (
-              <div className="w-8 h-8 flex items-center justify-center text-text-muted opacity-30" title="Eliminar desde pestaña Deportes">
+              <div className="w-11 h-11 flex items-center justify-center text-text-muted opacity-30" title="Eliminar desde pestaña Deportes">
                 <Lock className="w-4 h-4" />
               </div>
             ) : (
-              <button onClick={() => del(g.id)} className="bg-none border-none text-red-500 cursor-pointer text-base w-8 h-8 flex items-center justify-center">
+              <button onClick={() => del(g.id)} className="bg-none border-none text-red-500 cursor-pointer text-base w-11 h-11 flex items-center justify-center">
                 ✕
               </button>
             )}
@@ -3061,10 +3057,10 @@ function PlayerDetail({ player, activities, participants, onEdit, onClose }) {
   )];
 
   return (
-    <div className="fixed inset-0 bg-background z-50 overflow-y-auto">
-      <div className="bg-primary text-white p-5">
-        <div className="flex items-center gap-3 mb-4">
-          <button onClick={onClose} className="w-9 h-9 rounded-lg bg-white/20 text-white text-lg">←</button>
+    <div className="fixed inset-0 bg-background z-50 overflow-y-auto pb-28">
+      <div className="bg-primary text-white p-4">
+        <div className="flex items-center gap-3 mb-3">
+          <button onClick={onClose} className="w-11 h-11 rounded-xl bg-white/20 text-white text-lg flex items-center justify-center">←</button>
           <div className="flex-1">
             <div className="font-black text-lg">Perfil del Jugador</div>
           </div>
@@ -3094,7 +3090,7 @@ function PlayerDetail({ player, activities, participants, onEdit, onClose }) {
       </div>
 
       <div className="p-4">
-        <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
           <div className="bg-white rounded-xl p-4 border border-surface-dark text-center">
             <div className="text-3xl font-black text-primary">{stats.total}</div>
             <div className="text-xs text-text-muted font-bold">PUNTOS TOTALES</div>
@@ -3187,7 +3183,7 @@ function HelpInfo({ title, text }) {
                 <Info className="w-4 h-4" />
                 {title || 'Información'}
               </div>
-              <button onClick={() => setOpen(false)} className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-100 text-gray-400">
+              <button onClick={() => setOpen(false)} className="w-11 h-11 rounded-full flex items-center justify-center bg-gray-100 text-gray-400">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -3213,7 +3209,7 @@ function Modal({ title, onClose, children }) {
       <div className="bg-surface-dark p-4 border-b border-surface-dark flex items-center gap-3 sticky top-0">
         <button
           onClick={onClose}
-          className="w-9 h-9 rounded-lg bg-surface-dark border border-surface-dark text-dark text-lg cursor-pointer"
+          className="w-11 h-11 rounded-xl bg-surface-dark border border-surface-dark text-dark text-lg cursor-pointer flex items-center justify-center"
         >
           ←
         </button>
@@ -3226,9 +3222,9 @@ function Modal({ title, onClose, children }) {
 
 function PageHeader({ title, sub }) {
   return (
-    <div className="bg-surface-dark p-4 pb-3 border-b border-surface-dark">
-      <div className="text-3xl font-black" style={{ fontFamily: 'ClashGrotesk, sans-serif' }}>ACTIVADOS</div>
-      <h2 className="text-xl font-bold mt-1">{title}</h2>
+    <div className="bg-surface-dark p-3 pb-2 border-b border-surface-dark">
+      <div className="text-2xl font-black" style={{ fontFamily: 'ClashGrotesk, sans-serif' }}>ACTIVADOS</div>
+      <h2 className="text-lg font-bold mt-1">{title}</h2>
       <div className="text-sm text-text-muted mt-0.5">{sub}</div>
     </div>
   );
