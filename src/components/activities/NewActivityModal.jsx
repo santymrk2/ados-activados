@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useApp } from '../AppProvider';
+import { useApp } from '../../hooks/useApp';
 import { getTodayDateString } from '../../lib/utils';
 
 export function NewActivityModal({ onClose }) {
@@ -30,14 +30,14 @@ export function NewActivityModal({ onClose }) {
     <div className="fixed inset-0 bg-black/50 flex items-end z-50">
       <div className="bg-white w-full rounded-t-2xl p-6 animate-slide-up">
         <h2 className="font-black text-xl mb-4">Nueva Actividad</h2>
-        
+
         <div className="mb-4">
           <label className="block text-sm font-bold text-text-muted mb-2">Título</label>
           <input
             type="text"
             value={titulo}
             onChange={(e) => setTitulo(e.target.value)}
-            placeholder="Ej: Fútbol Mixto, Handball, Juegos..."
+            placeholder="Ej: 3ero de Mayo, Actividad 15 de mayo, ..."
             className="w-full p-3 bg-surface-dark rounded-xl border-none outline-none font-bold"
             autoFocus
           />

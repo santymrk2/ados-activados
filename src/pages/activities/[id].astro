@@ -1,0 +1,10 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import ActivityPage from '../../components/pages/ActivityPage';
+
+const { id } = Astro.params;
+---
+
+<Layout showNav={false}>
+  <ActivityPage id={id} client:only="react" />
+</Layout>

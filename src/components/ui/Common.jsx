@@ -1,3 +1,4 @@
+import { ChevronLeft } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 export function Modal({ title, onClose, children }) {
@@ -8,7 +9,7 @@ export function Modal({ title, onClose, children }) {
           onClick={onClose}
           className="w-11 h-11 rounded-xl bg-surface-dark border border-surface-dark text-dark text-lg cursor-pointer flex items-center justify-center"
         >
-          ←
+          <ChevronLeft className="w-5 h-5" />
         </button>
         <div className="font-black text-lg">{title}</div>
       </div>

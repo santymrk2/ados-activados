@@ -1,0 +1,10 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import ActivityFormWrapper from '../../../components/wrappers/ActivityFormWrapper';
+
+const { id } = Astro.params;
+---
+
+<Layout showNav={false}>
+  <ActivityFormWrapper mode="edit" id={id} client:only="react" />
+</Layout>

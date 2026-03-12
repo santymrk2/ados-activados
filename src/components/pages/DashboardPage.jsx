@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { navigate } from 'astro:transitions/client';
 import { Settings, BarChart3, Trophy, Calendar, Eye, EyeOff } from 'lucide-react';
 import { TEAMS, TEAM_COLORS, getTeamBg, getEdad } from '../../lib/constants';
 import { calcPts } from '../../lib/calc';
@@ -7,7 +7,7 @@ import { Section, Empty } from '../ui/Common';
 import { Avatar } from '../ui/Avatar';
 import { SexBadge, RankBadge } from '../ui/Badges';
 import { cn, formatDate } from '../../lib/utils';
-import { useApp } from '../AppProvider';
+import { useApp } from '../../hooks/useApp';
 import { SettingsPanel } from '../auth/SettingsPanel';
 
 function RankRow({ p, pos, activities, showPts }) {
@@ -50,7 +50,6 @@ const PODIUM_COLORS = [
 ];
 
 export default function DashboardPage() {
-  const navigate = useNavigate();
   const { db, showSettings, setShowSettings } = useApp();
   const { participants, activities } = db;
   const [showRanking, setShowRanking] = useState(false);
@@ -59,7 +58,7 @@ export default function DashboardPage() {
 
   const rankings = useMemo(() => {
     return (participants || []).map(p => {
-      const stats = calcPts(p.id, activities, participants);
+      const stats = calcPts(p.id, activities || [], participants || []);
       return { ...p, ...stats };
     }).sort((a, b) => b.total - a.total);
   }, [participants, activities]);
@@ -263,7 +262,7 @@ export default function DashboardPage() {
               {lastActs.map((a) => (
                 <div
                   key={a.id}
-                  onClick={() => navigate(`/activities/${a.id}`)}
+                  onClick={() => { navigate(`/activities/${a.id}`); }}
                   className="bg-white rounded-xl p-4 border border-surface-dark flex justify-between cursor-pointer"
                 >
                   <div>

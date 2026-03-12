@@ -1,18 +1,37 @@
 ---
-import '../styles/global.css';
+import { ClientRouter } from "astro:transitions";
+import { AuthGate } from "../components/auth/AuthGate";
+import { BottomNav } from "../components/ui/BottomNav";
+import "../styles/global.css";
+
+interface Props {
+  showNav?: boolean;
+}
+
+const { showNav = true } = Astro.props;
 ---
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
     <meta name="theme-color" content="#4342FF" />
     <title>Activados</title>
+    <ClientRouter />
   </head>
   <body class="pb-[env(safe-area-inset-bottom)]">
-    <slot />
+    <AuthGate client:only="react">
+      <slot />
+    </AuthGate>
+    {showNav && <BottomNav client:only="react" transition:persist />}
   </body>
 </html>

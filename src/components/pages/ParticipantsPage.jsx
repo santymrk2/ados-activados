@@ -1,15 +1,14 @@
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { navigate } from 'astro:transitions/client';
 import { Plus, Pencil, Trash2, Search, ArrowUpDown } from 'lucide-react';
 import { getEdad } from '../../lib/constants';
 import { calcPts } from '../../lib/calc';
 import { PageHeader, Empty } from '../ui/Common';
 import { Avatar } from '../ui/Avatar';
 import { formatDate } from '../../lib/utils';
-import { useApp } from '../AppProvider';
+import { useApp } from '../../hooks/useApp';
 
 export default function ParticipantsPage() {
-  const navigate = useNavigate();
   const { db, saveParticipant, deleteParticipant } = useApp();
   const { participants, activities } = db;
   const [search, setSearch] = useState('');
@@ -18,7 +17,7 @@ export default function ParticipantsPage() {
   const [filterSex, setFilterSex] = useState('all');
 
   const list = useMemo(() => {
-    let result = participants.map((p) => ({ ...p, ...calcPts(p.id, activities, participants) }));
+    let result = (participants || []).map((p) => ({ ...p, ...calcPts(p.id, activities || [], participants || []) }));
 
     if (search) {
       result = result.filter((p) => `${p.nombre} ${p.apellido}`.toLowerCase().includes(search.toLowerCase()));
@@ -59,10 +58,10 @@ export default function ParticipantsPage() {
 
   return (
     <div>
-      <PageHeader title="Jugadores" sub={`${participants.length} registrados`} />
+      <PageHeader title="Jugadores" sub={`${(participants || []).length} registrados`} />
       <div className="p-4">
         <button
-          onClick={() => navigate('/participants/new')}
+          onClick={() => { navigate('/participants/new'); }}
           className="w-full py-4 bg-accent text-dark font-bold text-base rounded-xl border-none cursor-pointer mb-3 flex items-center justify-center gap-2 min-h-[52px]"
         >
           <Plus className="w-5 h-5" />
@@ -122,7 +121,7 @@ export default function ParticipantsPage() {
               return (
                 <div
                   key={p.id}
-                  onClick={() => navigate(`/participants/${p.id}`)}
+                  onClick={() => { navigate(`/participants/${p.id}`); }}
                   className="bg-white rounded-xl p-3 border border-surface-dark flex items-center gap-3 cursor-pointer hover:border-primary/30"
                 >
                   <Avatar p={p} size={44} />
@@ -138,7 +137,7 @@ export default function ParticipantsPage() {
                   </div>
                   <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                     <button
-                      onClick={() => navigate(`/participants/${p.id}/edit`)}
+                      onClick={() => { navigate(`/participants/${p.id}/edit`); }}
                       className="w-11 h-11 rounded-xl bg-surface-dark border-none cursor-pointer flex items-center justify-center text-primary"
                     >
                       <Pencil className="w-4 h-4" />

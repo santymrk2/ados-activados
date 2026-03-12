@@ -1,23 +1,30 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
+import { useStore } from '@nanostores/react';
+import { $isAuthenticated, $authLoading } from '../store/appStore';
 
 const AUTH_KEY = 'activados_auth';
 const DEFAULT_PASSWORD = 'activados2026';
 
 export function useAuth() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const isAuthenticated = useStore($isAuthenticated);
+  const isLoading = useStore($authLoading);
 
   useEffect(() => {
     const savedAuth = localStorage.getItem(AUTH_KEY);
     if (savedAuth) {
-      const { validUntil } = JSON.parse(savedAuth);
-      if (new Date(validUntil) > new Date()) {
-        setIsAuthenticated(true);
-      } else {
+      try {
+        const { validUntil } = JSON.parse(savedAuth);
+        if (new Date(validUntil) > new Date()) {
+          $isAuthenticated.set(true);
+        } else {
+          localStorage.removeItem(AUTH_KEY);
+          $isAuthenticated.set(false);
+        }
+      } catch (e) {
         localStorage.removeItem(AUTH_KEY);
       }
     }
-    setIsLoading(false);
+    $authLoading.set(false);
   }, []);
 
   const login = useCallback((password) => {
@@ -26,7 +33,7 @@ export function useAuth() {
       const validUntil = new Date();
       validUntil.setDate(validUntil.getDate() + 1);
       localStorage.setItem(AUTH_KEY, JSON.stringify({ validUntil: validUntil.toISOString() }));
-      setIsAuthenticated(true);
+      $isAuthenticated.set(true);
       return { success: true };
     }
     return { success: false, error: 'Contraseña incorrecta' };
@@ -34,7 +41,7 @@ export function useAuth() {
 
   const logout = useCallback(() => {
     localStorage.removeItem(AUTH_KEY);
-    setIsAuthenticated(false);
+    $isAuthenticated.set(false);
   }, []);
 
   return {

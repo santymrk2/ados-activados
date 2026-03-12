@@ -3,7 +3,7 @@ import {
   LayoutGrid, Trophy, Award, Gamepad2, ChevronLeft, 
   List, Table2, Eye, EyeOff, Clock, BookOpen, HelpCircle
 } from 'lucide-react';
-import { TEAMS, TEAM_COLORS, getTeamBg } from '../../lib/constants';
+import { TEAMS, TEAM_COLORS, getTeamBg, DEPORTES, GENEROS } from '../../lib/constants';
 import { actPts, actGoles, calcDayTeamPts } from '../../lib/calc';
 import { Empty, Section } from '../ui/Common';
 import { Avatar } from '../ui/Avatar';
@@ -70,7 +70,7 @@ export function ActivityViewModal({ db, act, onEdit, onClose }) {
       <div className="bg-primary text-white p-4 sticky top-0 z-10">
         <div className="flex items-center gap-3 mb-3">
           <button onClick={onClose} className="w-11 h-11 rounded-xl bg-white/20 border-none text-white text-lg flex items-center justify-center">
-            ←
+            <ChevronLeft className="w-5 h-5" />
           </button>
           <div className="flex-1">
             <div className="font-black text-lg">{act.titulo || 'Actividad'}</div>
@@ -316,7 +316,6 @@ export function ActivityViewModal({ db, act, onEdit, onClose }) {
 
 function PartidosView({ partidos }) {
   const [filterGenero, setFilterGenero] = useState('all');
-  const { DEPORTES, GENEROS } = require('../../lib/constants');
   
   const filtered = filterGenero === 'all' ? partidos : partidos.filter(p => p.genero === filterGenero);
   const byDeporte = DEPORTES.reduce((acc, d) => {
@@ -368,7 +367,6 @@ function PartidosView({ partidos }) {
 }
 
 function PartidoReadOnlyCard({ part }) {
-  const { TEAM_COLORS, getTeamBg } = require('../../lib/constants');
   const isEmpate = part.resultado === 'empate';
   const isEq1Win = part.resultado === 'eq1';
   const isEq2Win = part.resultado === 'eq2';

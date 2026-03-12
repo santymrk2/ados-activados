@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { navigate } from 'astro:transitions/client';
 import { Pencil, Trash2, Users, Gamepad2, Award, Trophy, Calendar } from 'lucide-react';
 import { TEAMS, TEAM_COLORS, getTeamBg } from '../../lib/constants';
 import { calcPts } from '../../lib/calc';
@@ -7,17 +7,16 @@ import { PageHeader, Empty } from '../ui/Common';
 import { Avatar } from '../ui/Avatar';
 import { Chip } from '../ui/Badges';
 import { formatDate, isToday } from '../../lib/utils';
-import { useApp } from '../AppProvider';
+import { useApp } from '../../hooks/useApp';
 import { NewActivityModal } from '../activities/NewActivityModal';
 
 export default function ActivitiesPage() {
-  const navigate = useNavigate();
   const { db, deleteActivity } = useApp();
   const { activities } = db;
   const [showNewModal, setShowNewModal] = useState(false);
-  
-  const sorted = useMemo(() => [...activities].sort((a, b) => b.fecha.localeCompare(a.fecha)), [activities]);
-  
+
+  const sorted = useMemo(() => [...(activities || [])].sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '')), [activities]);
+
   const del = (id, e) => {
     e.stopPropagation();
     if (confirm('¿Eliminar?')) {
@@ -27,11 +26,11 @@ export default function ActivitiesPage() {
 
   return (
     <div>
-      <PageHeader title="Actividades" sub={`${activities.length} registradas`} />
+      <PageHeader title="Actividades" sub={`${(activities || []).length} registradas`} />
       <div className="p-4">
-        <button 
-          onClick={() => setShowNewModal(true)} 
-          className="w-full py-4 bg-primary text-white font-bold text-base rounded-xl border-none cursor-pointer mb-4 min-h-[52px]"
+        <button
+          onClick={() => setShowNewModal(true)}
+          className="w-full py-4 bg-accent text-dark font-bold text-base rounded-xl border-none cursor-pointer mb-4 min-h-[52px]"
         >
           + Nueva Actividad
         </button>
@@ -44,10 +43,9 @@ export default function ActivitiesPage() {
               return (
                 <div
                   key={a.id}
-                  onClick={() => navigate(`/activities/${a.id}`)}
-                  className={`bg-white rounded-2xl border-2 overflow-hidden cursor-pointer transition-all ${
-                    isHoy ? 'border-primary shadow-lg shadow-primary/20' : 'border-surface-dark'
-                  }`}
+                  onClick={() => { navigate(`/activities/${a.id}`); }}
+                  className={`bg-white rounded-2xl border-2 overflow-hidden cursor-pointer transition-all ${isHoy ? 'border-primary shadow-lg shadow-primary/20' : 'border-surface-dark'
+                    }`}
                 >
                   {isHoy && (
                     <div className="bg-primary text-white text-xs font-bold px-3 py-1 flex items-center gap-1">

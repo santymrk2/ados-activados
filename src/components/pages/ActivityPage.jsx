@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { navigate } from 'astro:transitions/client';
 import { 
   LayoutGrid, Trophy, Award, Gamepad2, ChevronLeft, 
   List, Table2, Eye, EyeOff, Clock, BookOpen, HelpCircle
@@ -11,7 +11,8 @@ import { Avatar } from '../ui/Avatar';
 import { SexBadge, RankBadge } from '../ui/Badges';
 import { HelpInfo } from '../ui/HelpInfo';
 import { cn, formatDate } from '../../lib/utils';
-import { useApp } from '../AppProvider';
+import { useApp } from '../../hooks/useApp';
+import { DEPORTES, GENEROS } from '../../lib/constants';
 
 const PODIUM_COLORS = [
   { bg: '#F59E0B', text: '#fff', shadow: '#F59E0B44' },
@@ -21,9 +22,7 @@ const PODIUM_COLORS = [
 
 const PTS = { rec: { 1: 10, 2: 7, 3: 4, 4: 2 } };
 
-export default function ActivityPage() {
-  const { id } = useParams();
-  const navigate = useNavigate();
+export default function ActivityPage({ id }) {
   const { db } = useApp();
   const { activities, participants } = db;
 
@@ -34,7 +33,7 @@ export default function ActivityPage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <p className="text-text-muted">Actividad no encontrada</p>
-          <button onClick={() => navigate('/activities')} className="text-primary font-bold mt-2">
+          <button onClick={() => { navigate('/activities'); }} className="text-primary font-bold mt-2">
             Volver a actividades
           </button>
         </div>
@@ -42,17 +41,17 @@ export default function ActivityPage() {
     );
   }
 
-  const dayPts = useMemo(() => calcDayTeamPts(act, participants), [act, participants]);
+  const dayPts = useMemo(() => calcDayTeamPts(act, participants || []), [act, participants]);
   const teamRank = TEAMS.map((t) => ({ team: t, pts: dayPts[t] || 0 })).sort((a, b) => b.pts - a.pts);
   const maxTeamPts = Math.max(...teamRank.map((t) => t.pts), 1);
 
   const playerRank = useMemo(
     () =>
-      act.asistentes
+      (act.asistentes || [])
         .map((pid) => {
-          const p = participants.find((x) => x.id === pid);
+          const p = (participants || []).find((x) => x.id === pid);
           if (!p) return null;
-          return { ...p, pts: actPts(pid, act, participants), goles: actGoles(pid, act) };
+          return { ...p, pts: actPts(pid, act, participants || []), goles: actGoles(pid, act) };
         })
         .filter(Boolean)
         .sort((a, b) => b.pts - a.pts),
@@ -90,14 +89,14 @@ export default function ActivityPage() {
     <div className="min-h-screen bg-background">
       <div className="bg-primary text-white p-4 sticky top-0 z-10">
         <div className="flex items-center gap-3 mb-3">
-          <button onClick={() => navigate(-1)} className="w-11 h-11 rounded-xl bg-white/20 border-none text-white text-lg flex items-center justify-center">
-            ←
+          <button onClick={() => history.back()} className="w-11 h-11 rounded-xl bg-white/20 border-none text-white text-lg flex items-center justify-center">
+            <ChevronLeft className="w-5 h-5" />
           </button>
           <div className="flex-1">
             <div className="font-black text-lg">{act.titulo || 'Actividad'}</div>
             <div className="text-sm opacity-70">{formatDate(act.fecha)} · {act.asistentes.length} presentes</div>
           </div>
-          <button onClick={() => navigate(`/activities/${id}/edit`)} className="bg-white/20 rounded-lg px-4 py-2 text-accent font-bold text-sm border border-white/30">
+          <button onClick={() => { navigate(`/activities/${id}/edit`); }} className="bg-white/20 rounded-lg px-4 py-2 text-accent font-bold text-sm border border-white/30">
             Editar
           </button>
         </div>
@@ -335,11 +334,8 @@ export default function ActivityPage() {
   );
 }
 
-import { useState } from 'react';
-
 function PartidosView({ partidos }) {
   const [filterGenero, setFilterGenero] = useState('all');
-  const { DEPORTES, GENEROS } = require('../../lib/constants');
   
   const filtered = filterGenero === 'all' ? partidos : partidos.filter(p => p.genero === filterGenero);
   const byDeporte = DEPORTES.reduce((acc, d) => {
@@ -391,7 +387,6 @@ function PartidosView({ partidos }) {
 }
 
 function PartidoReadOnlyCard({ part }) {
-  const { TEAM_COLORS, getTeamBg } = require('../../lib/constants');
   const isEmpate = part.resultado === 'empate';
   const isEq1Win = part.resultado === 'eq1';
   const isEq2Win = part.resultado === 'eq2';

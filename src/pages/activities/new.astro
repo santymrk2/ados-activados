@@ -1,0 +1,8 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import ActivityFormWrapper from '../../components/wrappers/ActivityFormWrapper';
+---
+
+<Layout showNav={false}>
+  <ActivityFormWrapper mode="new" client:only="react" />
+</Layout>
