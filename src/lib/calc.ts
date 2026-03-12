@@ -1,10 +1,10 @@
 import { PTS, TEAMS } from './constants';
 
-export function actPts(pid, a, participants) {
+export function actPts(pid: number, a: any, participants: any[]) {
   const p = participants.find(x => x.id === pid);
   if (!p) return 0;
   
-  const team = a.equipos?.[pid];
+  const team = a.equipos?.[pid] as string | undefined;
   const here = a.asistentes.includes(pid);
   let pts = 0;
   
@@ -15,8 +15,11 @@ export function actPts(pid, a, participants) {
     
     if (team) {
       for (const j of (a.juegos || [])) {
-        const r = j.pos?.[team];
-        if (r) pts += PTS.rec[r] || 0;
+        const r = j.pos?.[team] as number | undefined;
+        if (r) {
+          // @ts-ignore
+          pts += PTS.rec[r] || 0;
+        }
       }
       for (const part of (a.partidos || [])) {
         if (part.genero === "M" && p.sexo !== "M") continue;
@@ -30,21 +33,21 @@ export function actPts(pid, a, participants) {
         }
       }
     }
-    if ((a.invitaciones || []).some(i => i.invitador === pid)) pts += PTS.invito;
+    if ((a.invitaciones || []).some((i: any) => i.invitador === pid)) pts += PTS.invito;
   }
   
-  if ((a.invitaciones || []).some(i => i.invitado_id === pid)) pts += PTS.invitado;
-  for (const e of (a.extras || [])) if (e.pid === pid) pts += e.puntos;
-  for (const d of (a.descuentos || [])) if (d.pid === pid) pts -= d.puntos;
+  if ((a.invitaciones || []).some((i: any) => i.invitado_id === pid)) pts += PTS.invitado;
+  for (const e of (a.extras || [])) if (e.pid === pid) pts += (e.puntos as number);
+  for (const d of (a.descuentos || [])) if (d.pid === pid) pts -= (d.puntos as number);
   
   return pts;
 }
 
-export function actGoles(pid, a) {
-  return (a.goles || []).filter(g => g.pid === pid).reduce((s, g) => s + g.cant, 0);
+export function actGoles(pid: number, a: any) {
+  return (a.goles || []).filter((g: any) => g.pid === pid).reduce((s: number, g: any) => s + g.cant, 0);
 }
 
-export function calcPts(pid, activities, participants) {
+export function calcPts(pid: number, activities: any[], participants: any[]) {
   let total = 0, gf = 0, gh = 0, gb = 0, acts = 0;
   
   for (const a of activities) {
@@ -62,12 +65,15 @@ export function calcPts(pid, activities, participants) {
   return { total: total + gf + gh + gb, gf, gh, gb, acts };
 }
 
-export function calcDayTeamPts(a, participants) {
+export function calcDayTeamPts(a: any, participants: any[]) {
   const acc = { E1: 0, E2: 0, E3: 0, E4: 0 };
   for (const [pidStr, team] of Object.entries(a.equipos || {})) {
     const pid = Number(pidStr);
     if (!a.asistentes.includes(pid)) continue;
-    acc[team] = (acc[team] || 0) + actPts(pid, a, participants);
+    const t = team as keyof typeof acc;
+    if (acc[t] !== undefined) {
+      acc[t] = (acc[t] || 0) + actPts(pid, a, participants);
+    }
   }
   return acc;
 }
