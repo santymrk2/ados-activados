@@ -3,7 +3,8 @@ import { Settings, BarChart3, Trophy, Calendar, Eye, EyeOff } from 'lucide-react
 import { TEAMS, TEAM_COLORS, getTeamBg, getEdad } from '../../lib/constants';
 import { calcPts } from '../../lib/calc';
 import { Section, Empty } from '../ui/Common';
-import { Avatar, SexBadge } from '../ui/Badges';
+import { Avatar } from '../ui/Avatar';
+import { SexBadge } from '../ui/Badges';
 import { cn, formatDate } from '../../lib/utils';
 
 function RankRow({ p, pos, activities, showPts }) {

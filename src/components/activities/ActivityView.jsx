@@ -6,7 +6,8 @@ import {
 import { TEAMS, TEAM_COLORS, getTeamBg } from '../../lib/constants';
 import { actPts, actGoles, calcDayTeamPts } from '../../lib/calc';
 import { Empty, Section } from '../ui/Common';
-import { Avatar, SexBadge, RankBadge } from '../ui/Badges';
+import { Avatar } from '../ui/Avatar';
+import { SexBadge, RankBadge } from '../ui/Badges';
 import { HelpInfo } from '../ui/HelpInfo';
 import { cn, formatDate } from '../../lib/utils';
 

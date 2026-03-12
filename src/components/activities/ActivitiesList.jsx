@@ -3,7 +3,7 @@ import { Pencil, Trash2, Users, Gamepad2, Award, Trophy } from 'lucide-react';
 import { TEAMS, TEAM_COLORS, getTeamBg } from '../../lib/constants';
 import { calcPts } from '../../lib/calc';
 import { PageHeader, Empty } from '../ui/Common';
-import { Avatar, Chip } from '../ui/Badges';
+import { Chip } from '../ui/Badges';
 import { formatDate } from '../../lib/utils';
 
 export function ActivitiesList({ db, onView, onNew, onEdit, onDelete }) {
