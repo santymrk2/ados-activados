@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useDatabase } from '../hooks/useDatabase';
+import { syncTeamConstants } from '../lib/constants';
 
 const AppContext = createContext(null);
 
@@ -17,6 +18,10 @@ export function AppProvider({ children }) {
   const { db, isLoading: dbLoading, saveActivity, deleteActivity, quickUpdate, saveParticipant, deleteParticipant, refresh } = useDatabase();
 
   const isLoading = authLoading || dbLoading;
+
+  useEffect(() => {
+    syncTeamConstants();
+  }, []);
 
   const handleLogout = useCallback(() => {
     logout();
