@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Build output
+.astro/
+dist/
+.vercel/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test
+playwright-report/
+test-results/
+playwright/.auth/
+
+# DB
+*.db
+*.sqlite
+drizzle/
+
+# Misc
+*.local
