@@ -12,6 +12,7 @@ import {
   ChevronDown,
   ChevronUp,
   ChevronLeft,
+  ChevronRight,
   Check,
   Star,
   Target,
@@ -39,6 +40,8 @@ import {
   List,
   ArrowUpDown,
   Info,
+  Settings,
+  LogOut,
 } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 
@@ -58,10 +61,38 @@ export default function App() {
   const [loginPass, setLoginPass] = useState('');
   const [loginError, setLoginError] = useState(false);
   const [showPass, setShowPass] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
+    const savedAuth = localStorage.getItem('activados_auth');
+    if (savedAuth) {
+      const { validUntil } = JSON.parse(savedAuth);
+      if (new Date(validUntil) > new Date()) {
+        setIsAuthenticated(true);
+      } else {
+        localStorage.removeItem('activados_auth');
+      }
+    }
     initDB();
   }, []);
+
+  const handleLogin = (password) => {
+    if (password === (import.meta.env.PUBLIC_ADMIN_PASSWORD || 'activados2026') || password === 'admin') {
+      const validUntil = new Date();
+      validUntil.setDate(validUntil.getDate() + 1);
+      localStorage.setItem('activados_auth', JSON.stringify({ validUntil: validUntil.toISOString() }));
+      setIsAuthenticated(true);
+      setLoginError(false);
+      return true;
+    }
+    return false;
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('activados_auth');
+    setIsAuthenticated(false);
+    setShowSettings(false);
+  };
 
   async function initDB() {
     try {
@@ -152,10 +183,7 @@ export default function App() {
 
           <form onSubmit={(e) => {
             e.preventDefault();
-            if (loginPass === (import.meta.env.PUBLIC_ADMIN_PASSWORD || 'activados2026') || loginPass === 'admin') {
-              setIsAuthenticated(true);
-              setLoginError(false);
-            } else {
+            if (!handleLogin(loginPass)) {
               setLoginError(true);
             }
           }}>
@@ -227,7 +255,7 @@ export default function App() {
       )}
       {!modal && (
         <>
-          {view === 'dashboard' && <Dashboard db={db} />}
+          {view === 'dashboard' && <Dashboard db={db} onOpenSettings={() => setShowSettings(true)} />}
           {view === 'activities' && (
             <ActivitiesList
               db={db}
@@ -248,6 +276,38 @@ export default function App() {
           )}
           <BottomNav view={view} setView={setView} />
         </>
+      )}
+
+      {showSettings && (
+        <div className="fixed inset-0 bg-black/60 z-[60] flex items-end sm:items-center justify-center" onClick={() => setShowSettings(false)}>
+          <div 
+            className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="p-4 border-b border-surface-dark">
+              <div className="flex items-center justify-between">
+                <div className="font-black text-lg">Configuración</div>
+                <button onClick={() => setShowSettings(false)} className="w-10 h-10 rounded-xl bg-surface-dark flex items-center justify-center">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            <div className="p-4">
+              <button 
+                onClick={handleLogout}
+                className="w-full py-3 px-4 bg-red-50 rounded-xl flex items-center gap-3 text-red-600 font-bold"
+              >
+                <LogOut className="w-5 h-5" />
+                Cerrar Sesión
+              </button>
+            </div>
+            <div className="p-4 pb-8">
+              <div className="text-center text-xs text-text-muted">
+                Sesión activa por 24 horas
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -291,68 +351,27 @@ function BottomNav({ view, setView }) {
   );
 }
 
-function Dashboard({ db }) {
+function Dashboard({ db, onOpenSettings }) {
   const { participants, activities } = db;
   const [showRanking, setShowRanking] = useState(false);
   const [showTopGoleadores, setShowTopGoleadores] = useState(false);
   const [topGoleadoresGender, setTopGoleadoresGender] = useState('M');
 
-  const stats = useMemo(() => {
-    const totalAsistencias = activities.reduce((s, a) => s + a.asistentes.length, 0);
-    const avgAsistencia = activities.length > 0 ? (totalAsistencias / activities.length).toFixed(1) : 0;
-    const totalGoles = activities.reduce((s, a) => s + (a.goles || []).reduce((gs, g) => gs + g.cant, 0), 0);
-    const totalPartidos = activities.reduce((s, a) => s + (a.partidos || []).length, 0);
-    const jugadoresActivos = new Set(activities.flatMap(a => a.asistentes)).size;
-    const porcentajeActivos = participants.length > 0 ? ((jugadoresActivos / participants.length) * 100).toFixed(0) : 0;
-    const masGoles = { f: 0, h: 0, b: 0 };
-    const playerGoals = {};
-    activities.forEach(a => {
-      (a.goles || []).forEach(g => {
-        masGoles[g.tipo] = (masGoles[g.tipo] || 0) + g.cant;
-        playerGoals[g.pid] = (playerGoals[g.pid] || 0) + g.cant;
-      });
-    });
-
-    const allScorers = Object.entries(playerGoals)
-      .map(([pid, goals]) => {
-        const p = participants.find(x => x.id === Number(pid));
-        if (!p) return null;
-        return { ...p, goals };
-      })
-      .filter(Boolean)
-      .sort((a, b) => b.goals - a.goals);
-
-    const top5ScorersM = allScorers.filter(p => p.sexo === 'M').slice(0, 5);
-    const top5ScorersF = allScorers.filter(p => p.sexo === 'F').slice(0, 5);
-
-    return {
-      totalAsistencias,
-      avgAsistencia,
-      totalGoles,
-      totalPartidos,
-      jugadoresActivos,
-      porcentajeActivos,
-      masGoles,
-      top5ScorersM,
-      top5ScorersF,
-    };
-  }, [db]);
-
-  const rankings = useMemo(
-    () =>
-      participants
-        .map((p) => ({ ...p, ...calcPts(p.id, activities, participants) }))
-        .sort((a, b) => b.total - a.total),
-    [db]
-  );
-
-  const lastActs = [...activities].sort((a, b) => b.fecha.localeCompare(a.fecha)).slice(0, 4);
-
   return (
     <div>
       <div className="bg-primary text-white p-4 pb-3">
-        <div className="text-3xl font-black tracking-tight" style={{ fontFamily: 'ClashGrotesk, sans-serif' }}>ACTIVADOS</div>
-        <h1 className="text-lg font-bold mt-1 opacity-80">Dashboard</h1>
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="text-2xl font-black tracking-tight" style={{ fontFamily: 'ClashGrotesk, sans-serif' }}>ACTIVADOS</div>
+            <h1 className="text-lg font-bold mt-1 opacity-80">Dashboard</h1>
+          </div>
+          <button 
+            onClick={onOpenSettings}
+            className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors"
+          >
+            <Settings className="w-5 h-5" />
+          </button>
+        </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
           <div className="bg-white/10 rounded-xl p-3 text-center border border-white/20">
@@ -969,23 +988,6 @@ function ActivitiesList({ db, onView, onNew, onEdit, onDelete }) {
                   <Chip icon={Award} val={(a.partidos || []).length} label="partidos" />
                   <Chip icon={Trophy} val={(a.goles || []).reduce((s, g) => s + g.cant, 0)} label="goles" />
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-1 p-3 pt-0">
-                  {TEAMS.map((t) => {
-                    const n = Object.entries(a.equipos || {}).filter(([pid, eq]) => eq === t && a.asistentes.includes(Number(pid))).length;
-                    return (
-                      <div
-                        key={t}
-                        className="rounded-lg p-2 text-center border"
-                        style={{ backgroundColor: getTeamBg(t), borderColor: TEAM_COLORS[t] + '44' }}
-                      >
-                        <div className="text-xs font-bold" style={{ color: TEAM_COLORS[t] }}>
-                          {t}
-                        </div>
-                        <div className="text-xs text-text-muted">{n} jug.</div>
-                      </div>
-                    );
-                  })}
-                </div>
               </div>
             ))}
           </div>
@@ -1103,13 +1105,6 @@ function ParticipantsList({ db, onNew, onEdit, onDelete, onViewDetail }) {
         ) : (
           <div className="flex flex-col gap-2">
             {list.map((p) => {
-              const teamsPlayed = [
-                ...new Set(
-                  db.activities.flatMap((a) =>
-                    a.asistentes.includes(p.id) && a.equipos?.[p.id] ? [a.equipos[p.id]] : []
-                  )
-                ),
-              ];
               return (
                 <div
                   key={p.id}
@@ -1121,12 +1116,7 @@ function ParticipantsList({ db, onNew, onEdit, onDelete, onViewDetail }) {
                     <div className="font-bold truncate">{p.nombre} {p.apellido}</div>
                     <div className="text-xs mt-1 flex gap-2 flex-wrap items-center">
                       <SexBadge sex={p.sexo} />
-                      <span className="text-text-muted">· {getEdad(p.fechaNacimiento)}a · {p.acts} act.</span>
-                      {teamsPlayed.map((t) => (
-                        <span key={t} className="font-bold" style={{ color: TEAM_COLORS[t] }}>
-                          {t}
-                        </span>
-                      ))}
+                      <span className="text-text-muted">{getEdad(p.fechaNacimiento)}a · {p.acts} act.</span>
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
@@ -1359,26 +1349,26 @@ function ActivityForm({ db, initial, onClose, onSave, onQuickUpdate, onSaveParti
 
   return (
     <div className="fixed inset-0 bg-background z-50 overflow-y-auto pb-28">
-      <div className="bg-surface-dark p-3 sticky top-0 z-10">
+      <div className="bg-primary text-white p-3 sticky top-0 z-10">
         <div className="flex items-center gap-3 mb-2">
           <button
             onClick={onClose}
-            className="w-11 h-11 rounded-xl bg-surface-dark border border-surface-dark text-dark text-lg cursor-pointer flex items-center justify-center"
+            className="w-11 h-11 rounded-xl bg-white/20 border-none text-white text-lg cursor-pointer flex items-center justify-center"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           <div className="flex-1">
             <div className="font-black text-lg">{act.id ? 'Editar' : 'Nueva'} Actividad</div>
-            <div className="text-xs text-text-muted">{act.titulo || 'Sin título'} · {formatDate(act.fecha)}</div>
+            <div className="text-xs opacity-70">{act.titulo || 'Sin título'} · {formatDate(act.fecha)}</div>
           </div>
-          <span className={`text-xs font-bold ${statusIndicator.color}`}>{statusIndicator.label}</span>
+          <span className={`text-xs font-bold ${saveStatus === 'saved' ? 'text-green-300' : saveStatus === 'saving' ? 'text-yellow-300' : 'text-red-300'}`}>{statusIndicator.label}</span>
         </div>
         <div className="flex overflow-x-auto gap-1 pb-2">
           {TABS.map(({ icon: Icon, label, key }, i) => (
             <button
               key={key}
               onClick={() => setTab(i)}
-              className={`flex flex-col items-center justify-center py-2 px-2 rounded-lg min-w-[60px] flex-shrink-0 ${tab === i ? 'bg-primary text-white' : 'bg-white text-text-muted'
+              className={`flex flex-col items-center justify-center py-2 px-2 rounded-lg min-w-[60px] flex-shrink-0 ${tab === i ? 'bg-white text-primary' : 'bg-white/20 text-white/70'
                 }`}
             >
               <Icon className="w-4 h-4 mb-1" />
@@ -1400,7 +1390,7 @@ function ActivityForm({ db, initial, onClose, onSave, onQuickUpdate, onSaveParti
       <div className="fixed bottom-4 left-4 right-4 flex gap-3">
         {tab > 0 && (
           <button onClick={() => setTab((t) => t - 1)} className="flex-1 py-3 bg-surface-dark rounded-xl text-dark font-bold cursor-pointer flex items-center justify-center gap-2">
-            <ChevronUp className="w-4 h-4 rotate-90" />
+            <ChevronLeft className="w-4 h-4" />
             {TABS[tab - 1].label}
           </button>
         )}
@@ -1410,7 +1400,7 @@ function ActivityForm({ db, initial, onClose, onSave, onQuickUpdate, onSaveParti
             className="flex-1 py-3 bg-primary text-white rounded-xl font-bold cursor-pointer flex items-center justify-center gap-2"
           >
             {TABS[tab + 1].label}
-            <ChevronDown className="w-4 h-4" />
+            <ChevronRight className="w-4 h-4" />
           </button>
         )}
       </div>
@@ -2382,6 +2372,7 @@ function PartidoReadOnlyCard({ part }) {
 
 function TabDeportes({ act, A, Q, db }) {
   const [filterGenero, setFilterGenero] = useState('all');
+  const [selectedPartido, setSelectedPartido] = useState(null);
 
   const add = () => {
     const np = { id: Date.now(), deporte: 'Fútbol', genero: 'M', eq1: 'E1', eq2: 'E2', resultado: null };
@@ -2396,11 +2387,6 @@ function TabDeportes({ act, A, Q, db }) {
 
   const allPartidos = act.partidos || [];
   const filtered = filterGenero === 'all' ? allPartidos : allPartidos.filter(p => p.genero === filterGenero);
-  const byDeporte = DEPORTES.reduce((acc, d) => {
-    const group = filtered.filter(p => p.deporte === d);
-    if (group.length > 0) acc[d] = group;
-    return acc;
-  }, {});
 
   return (
     <div>
@@ -2439,35 +2425,34 @@ function TabDeportes({ act, A, Q, db }) {
         ))}
       </div>
 
-      {filtered.length === 0 && allPartidos.length > 0 ? (
-        <Empty text="Sin partidos para este filtro" />
-      ) : null}
+      {filtered.length === 0 ? (
+        <Empty text="Sin partidos" />
+      ) : (
+        <div className="flex flex-col gap-2">
+          {filtered.map((part) => (
+            <PartidoResumenCard 
+              key={part.id} 
+              part={part} 
+              act={act}
+              onClick={() => setSelectedPartido(part)}
+            />
+          ))}
+        </div>
+      )}
 
-      <div className="flex flex-col gap-6">
-        {Object.entries(byDeporte).map(([deporte, parts]) => (
-          <div key={deporte}>
-            <div className="flex items-center gap-2 mb-2">
-              <Gamepad2 className="w-4 h-4 text-primary" />
-              <span className="font-black text-sm">{deporte}</span>
-              <span className="text-xs text-text-muted">({parts.length} partido{parts.length !== 1 ? 's' : ''})</span>
-            </div>
-            <div className="flex flex-col gap-4">
-              {parts.map((part) => (
-                <PartidoCard
-                  key={part.id}
-                  part={part}
-                  act={act}
-                  A={A}
-                  Q={Q}
-                  db={db}
-                  onDel={() => del(part.id)}
-                  onUpd={(k, v) => upd(part.id, k, v)}
-                />
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
+      {selectedPartido && (
+        <PartidoEditModal
+          part={selectedPartido}
+          act={act}
+          db={db}
+          onClose={() => setSelectedPartido(null)}
+          onUpd={(k, v) => upd(selectedPartido.id, k, v)}
+          onDel={() => {
+            del(selectedPartido.id);
+            setSelectedPartido(null);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -2650,6 +2635,262 @@ function PartidoCard({ part, onDel, onUpd, act, A, Q, db }) {
   );
 }
 
+function PartidoResumenCard({ part, act, onClick }) {
+  const goles = (act.goles || []).filter(g => g.matchId === part.id);
+  const score1 = goles.filter(g => g.team === part.eq1).length;
+  const score2 = goles.filter(g => g.team === part.eq2).length;
+
+  const SPORT_ICONS = {
+    'Fútbol': '⚽',
+    'Handball': '🤾',
+    'Básquet': '🏀',
+    'Vóley': '🏐',
+    'Otro': '🎲'
+  };
+
+  const isEq1Win = score1 > score2;
+  const isEq2Win = score2 > score1;
+  const isEmpate = score1 === score2 && score1 > 0;
+
+  return (
+    <div 
+      onClick={onClick}
+      className="bg-white rounded-xl border border-surface-dark p-3 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-transform"
+    >
+      <div className="flex items-center gap-3">
+        <div className="text-2xl">{SPORT_ICONS[part.deporte] || '🎲'}</div>
+        <div>
+          <div className="font-bold text-sm">{part.deporte}</div>
+          <div className="text-xs text-text-muted flex items-center gap-1">
+            <SexBadge sex={part.genero} />
+            <span>{part.genero === 'M' ? 'Varones' : part.genero === 'F' ? 'Mujeres' : 'Mixto'}</span>
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="font-black text-lg" style={{ color: isEq1Win ? '#22C55E' : isEmpate ? '#EAB308' : '#666' }}>
+          {part.eq1}
+        </div>
+        <div className="bg-surface-dark rounded-lg px-3 py-1 flex items-center gap-2">
+          <span className="font-black text-lg">{score1}</span>
+          <span className="text-text-muted text-xs">:</span>
+          <span className="font-black text-lg">{score2}</span>
+        </div>
+        <div className="font-black text-lg" style={{ color: isEq2Win ? '#22C55E' : isEmpate ? '#EAB308' : '#666' }}>
+          {part.eq2}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PartidoEditModal({ part, act, db, onClose, onUpd, onDel }) {
+  const [localPart, setLocalPart] = useState(part);
+
+  useEffect(() => {
+    setLocalPart(part);
+  }, [part]);
+
+  const update = (key, value) => {
+    setLocalPart(prev => ({ ...prev, [key]: value }));
+    onUpd(key, value);
+  };
+
+  const goles = (act.goles || []).filter(g => g.matchId === part.id);
+  const score1 = localPart.eq1 ? localPart.eq1.split('').reduce((acc, _, i) => {
+    const g = act.goles?.filter(gol => gol.matchId === part.id && gol.team === localPart.eq1);
+    return acc + (g?.length || 0);
+  }, 0) : 0;
+  const actualScore1 = (act.goles || []).filter(g => g.matchId === part.id && g.team === localPart.eq1).length;
+  const actualScore2 = (act.goles || []).filter(g => g.matchId === part.id && g.team === localPart.eq2).length;
+
+  const addGoal = (team) => {
+    const tipoMap = { 'Fútbol': 'f', 'Handball': 'h', 'Básquet': 'b' };
+    const newGoal = {
+      id: Date.now(),
+      pid: null,
+      tipo: tipoMap[localPart.deporte] || 'f',
+      matchId: part.id,
+      team: team,
+      cant: 1
+    };
+    const newGoles = [...(act.goles || []), newGoal];
+    const currentGoles = act.goles || [];
+    const allGoles = [...currentGoles, newGoal];
+    const score1New = allGoles.filter(g => g.matchId === part.id && g.team === localPart.eq1).length;
+    const score2New = allGoles.filter(g => g.matchId === part.id && g.team === localPart.eq2).length;
+    let newRes = 'empate';
+    if (score1New > score2New) newRes = 'eq1';
+    else if (score2New > score1New) newRes = 'eq2';
+    onUpd('resultado', newRes);
+  };
+
+  const delGoal = (id) => {
+    const currentGoles = act.goles || [];
+    const allGoles = currentGoles.filter(g => g.id !== id);
+    const score1New = allGoles.filter(g => g.matchId === part.id && g.team === localPart.eq1).length;
+    const score2New = allGoles.filter(g => g.matchId === part.id && g.team === localPart.eq2).length;
+    let newRes = 'empate';
+    if (score1New > score2New) newRes = 'eq1';
+    else if (score2New > score1New) newRes = 'eq2';
+    onUpd('resultado', newRes);
+  };
+
+  const updGoal = (id, pid) => {
+  };
+
+  const getTeamPlayers = (team) => {
+    return db.participants.filter(p =>
+      act.asistentes.includes(p.id) &&
+      act.equipos?.[p.id] === team &&
+      (localPart.genero === 'MX' || p.sexo === localPart.genero)
+    );
+  };
+
+  const SPORT_ICONS = {
+    'Fútbol': '⚽',
+    'Handball': '🤾',
+    'Básquet': '🏀',
+    'Vóley': '🏐',
+    'Otro': '🎲'
+  };
+
+  const isEq1Win = localPart.resultado === 'eq1';
+  const isEq2Win = localPart.resultado === 'eq2';
+  const isEmpate = localPart.resultado === 'empate';
+
+  return (
+    <div className="fixed inset-0 bg-black/60 z-[60] flex items-end sm:items-center justify-center" onClick={onClose}>
+      <div 
+        className="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="bg-primary text-white p-4 sticky top-0 z-10 rounded-t-3xl sm:rounded-t-3xl">
+          <div className="flex items-center justify-between">
+            <button onClick={onClose} className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center">
+              ✕
+            </button>
+            <div className="font-black text-lg">Editar Partido</div>
+            <button onClick={onDel} className="w-11 h-11 rounded-xl bg-red-500/20 text-red-300 flex items-center justify-center">
+              🗑
+            </button>
+          </div>
+        </div>
+
+        <div className="p-4">
+          <div className="flex gap-1 mb-4 overflow-x-auto pb-2">
+            {DEPORTES.map(d => (
+              <button
+                key={d}
+                onClick={() => update('deporte', d)}
+                className={cn(
+                  "w-12 h-12 rounded-xl flex items-center justify-center text-2xl transition-all flex-shrink-0",
+                  localPart.deporte === d ? "bg-primary text-white shadow-lg" : "bg-surface-dark text-text-muted"
+                )}
+              >
+                {SPORT_ICONS[d] || '❓'}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex gap-2 mb-4">
+            {['M', 'F', 'MX'].map(g => (
+              <button
+                key={g}
+                onClick={() => update('genero', g)}
+                className={cn(
+                  "flex-1 py-2 rounded-xl font-bold text-sm transition-all border",
+                  localPart.genero === g 
+                    ? "bg-primary text-white border-primary" 
+                    : "bg-white text-text-muted border-surface-dark"
+                )}
+              >
+                <span className="flex items-center justify-center gap-1"><SexBadge sex={g} /> {g === 'M' ? 'Varones' : g === 'F' ? 'Mujeres' : 'Mixto'}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-11 gap-2 mb-4">
+            <div className="col-span-4">
+              <select
+                value={localPart.eq1}
+                onChange={(e) => update('eq1', e.target.value)}
+                className="input mb-0 font-black text-center"
+                style={{ backgroundColor: getTeamBg(localPart.eq1), color: TEAM_COLORS[localPart.eq1] }}
+              >
+                {TEAMS.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+            <div className="col-span-3 flex flex-col items-center justify-center">
+              <span className="text-xs text-text-muted font-bold uppercase">Score</span>
+            </div>
+            <div className="col-span-4">
+              <select
+                value={localPart.eq2}
+                onChange={(e) => update('eq2', e.target.value)}
+                className="input mb-0 font-black text-center"
+                style={{ backgroundColor: getTeamBg(localPart.eq2), color: TEAM_COLORS[localPart.eq2] }}
+              >
+                {TEAMS.filter((t) => t !== localPart.eq1).map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex justify-center gap-8 mb-6">
+            <button onClick={() => addGoal(localPart.eq1)} className="w-14 h-14 rounded-full bg-primary text-white font-black text-2xl flex items-center justify-center shadow-lg active:scale-95 transition-transform">+</button>
+            <div className="flex items-center gap-4">
+              <span className="text-4xl font-black">{actualScore1}</span>
+              <span className="text-2xl text-text-muted">:</span>
+              <span className="text-4xl font-black">{actualScore2}</span>
+            </div>
+            <button onClick={() => addGoal(localPart.eq2)} className="w-14 h-14 rounded-full bg-primary text-white font-black text-2xl flex items-center justify-center shadow-lg active:scale-95 transition-transform">+</button>
+          </div>
+
+          <div className="bg-surface-dark rounded-xl p-3">
+            <div className="text-xs font-bold text-text-muted uppercase mb-2">Goleadores</div>
+            <div className="grid grid-cols-2 gap-3">
+              {[localPart.eq1, localPart.eq2].map((team) => (
+                <div key={team}>
+                  <div className="text-xs font-bold mb-1" style={{ color: TEAM_COLORS[team] }}>{team}</div>
+                  {goles.filter(g => g.team === team).map((g) => (
+                    <div key={g.id} className="flex gap-1 items-center mb-1">
+                      <select
+                        value={g.pid || ''}
+                        onChange={(e) => {
+                          const newGoles = (act.goles || []).map(go => go.id === g.id ? { ...go, pid: Number(e.target.value) || null } : go);
+                          onUpd('goles', newGoles);
+                        }}
+                        className="flex-1 text-xs p-1 border rounded bg-white"
+                      >
+                        <option value="">— Quién? —</option>
+                        {getTeamPlayers(team).map(p => (
+                          <option key={p.id} value={p.id}>{p.nombre} {p.apellido[0]}.</option>
+                        ))}
+                      </select>
+                      <button 
+                        onClick={() => {
+                          const newGoles = (act.goles || []).filter(go => go.id !== g.id);
+                          onUpd('goles', newGoles);
+                          delGoal(g.id);
+                        }} 
+                        className="w-6 h-6 rounded bg-red-100 text-red-500 flex items-center justify-center text-xs"
+                      >✕</button>
+                    </div>
+                  ))}
+                  {goles.filter(g => g.team === team).length === 0 && <div className="text-[10px] text-text-muted italic">Sin goles</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 
 function TabInvitados({ act, A, db, onSaveParticipant, onUpdateAct }) {
@@ -3222,10 +3463,12 @@ function Modal({ title, onClose, children }) {
 
 function PageHeader({ title, sub }) {
   return (
-    <div className="bg-surface-dark p-3 pb-2 border-b border-surface-dark">
-      <div className="text-2xl font-black" style={{ fontFamily: 'ClashGrotesk, sans-serif' }}>ACTIVADOS</div>
-      <h2 className="text-lg font-bold mt-1">{title}</h2>
-      <div className="text-sm text-text-muted mt-0.5">{sub}</div>
+    <div className="bg-primary text-white p-4 pb-3">
+      <div className="text-2xl font-black tracking-tight" style={{ fontFamily: 'ClashGrotesk, sans-serif' }}>ACTIVADOS</div>
+      <div className="flex justify-between items-end mt-1">
+        <h2 className="text-lg font-bold opacity-80">{title}</h2>
+        {sub && <div className="text-sm opacity-60">{sub}</div>}
+      </div>
     </div>
   );
 }
