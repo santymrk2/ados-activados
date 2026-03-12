@@ -7,6 +7,7 @@ export default defineConfig({
   output: 'server',
   adapter: vercel({
     webAnalytics: { enabled: true },
+    excludeFiles: ['node_modules/libsql/**/*'],
   }),
   integrations: [react()],
   vite: {
