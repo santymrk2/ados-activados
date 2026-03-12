@@ -112,6 +112,14 @@ select.input {
   scrollbar-width: none;
 }
 
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 .btn-touch {
   min-width: 44px;
   min-height: 44px;

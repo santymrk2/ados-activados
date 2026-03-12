@@ -27,7 +27,7 @@ export function NewActivityModal({ onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-end z-50">
+    <div className="fixed inset-0 bg-black/50 flex items-end z-[60]">
       <div className="bg-white w-full rounded-t-2xl p-6 animate-slide-up">
         <h2 className="font-black text-xl mb-4">Nueva Actividad</h2>
 

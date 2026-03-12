@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { navigate } from 'astro:transitions/client';
-import { 
-  LayoutGrid, Trophy, Award, Gamepad2, ChevronLeft, 
+import {
+  LayoutGrid, Trophy, Award, Gamepad2, ChevronLeft,
   List, Table2, Eye, EyeOff, Clock, BookOpen, HelpCircle, Coffee
 } from 'lucide-react';
 import { TEAMS, TEAM_COLORS, getTeamBg } from '../../lib/constants';
@@ -99,21 +99,6 @@ export default function ActivityPage({ id }) {
           <button onClick={() => { navigate(`/activities/${id}/edit`); }} className="bg-white/20 rounded-lg px-4 py-2 text-accent font-bold text-sm border border-white/30">
             Editar
           </button>
-        </div>
-        <div className="flex">
-          {TABS.map(({ icon: Icon, label }, i) => (
-            <button
-              key={i}
-              onClick={() => setTab(i)}
-              className={cn(
-                'flex-1 py-2 bg-none border-none cursor-pointer font-bold text-xs flex flex-col items-center gap-1',
-                tab === i ? 'text-accent border-b-2 border-accent' : 'text-white/50'
-              )}
-            >
-              <Icon className="w-4 h-4" />
-              {label}
-            </button>
-          ))}
         </div>
       </div>
 
@@ -331,13 +316,28 @@ export default function ActivityPage({ id }) {
           <PartidosView partidos={act.partidos || []} />
         )}
       </div>
+
+      <div className="fixed bottom-4 left-4 right-4 bg-white rounded-2xl shadow-lg shadow-black/10 border border-surface-dark flex z-50 p-2 safe-area-bottom">
+        <div className="flex overflow-x-auto gap-1 no-scrollbar max-w-full">
+          {TABS.map(({ icon: Icon, label }, i) => (
+            <button
+              key={i}
+              onClick={() => setTab(i)}
+              className={`flex flex-col items-center justify-center py-2 px-2 rounded-xl transition-colors flex-1 min-w-[60px] ${tab === i ? 'text-primary bg-primary/10' : 'text-text-muted hover:text-dark'}`}
+            >
+              <Icon className="w-5 h-5 mb-0.5" />
+              <span className="text-[8px] font-bold">{label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
 
 function PartidosView({ partidos }) {
   const [filterGenero, setFilterGenero] = useState('all');
-  
+
   const filtered = filterGenero === 'all' ? partidos : partidos.filter(p => p.genero === filterGenero);
   const byDeporte = DEPORTES.reduce((acc, d) => {
     const group = filtered.filter(p => p.deporte === d);

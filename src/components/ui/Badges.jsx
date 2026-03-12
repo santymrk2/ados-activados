@@ -11,7 +11,7 @@ export function RankBadge({ pos }) {
     const c = PODIUM_COLORS[pos - 1];
     return (
       <div
-        className="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm z-10 flex-shrink-0"
+        className="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm z-0 flex-shrink-0"
         style={{ backgroundColor: c.bg, color: c.text, boxShadow: `0 0 0 3px ${c.shadow}` }}
       >
         {pos}
@@ -19,7 +19,7 @@ export function RankBadge({ pos }) {
     );
   }
   return (
-    <div className="w-8 h-8 flex items-center justify-center font-light text-sm text-text-muted z-10 flex-shrink-0">
+    <div className="w-8 h-8 flex items-center justify-center font-light text-sm text-text-muted z-0 flex-shrink-0">
       {pos}
     </div>
   );

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Toaster, toast } from 'sonner';
-import { 
+import {
   FileText, Users, LayoutGrid, Gamepad2, Award, Mail, Plus, Trophy,
   ChevronLeft, ChevronRight, Clock, BookOpen, Search, ArrowUpDown, X, List, Table2, Coffee, Zap, Trash2, Settings
 } from 'lucide-react';
@@ -85,7 +85,7 @@ export function ActivityFormModal({ db, initial, onClose, onSave, onQuickUpdate,
   }[saveStatus];
 
   return (
-    <div className="fixed inset-0 bg-background z-50 overflow-y-auto pb-28 min-h-screen">
+    <div className="fixed inset-0 bg-background z-50 overflow-y-auto pb-32 min-h-screen">
       <div className="bg-primary text-white p-3 sticky top-0 z-10">
         <div className="flex items-center gap-3 mb-2">
           <button onClick={onClose} className="w-11 h-11 rounded-xl bg-white/20 border-none text-white text-lg cursor-pointer flex items-center justify-center">
@@ -99,18 +99,6 @@ export function ActivityFormModal({ db, initial, onClose, onSave, onQuickUpdate,
             {statusIndicator.label}
           </span>
         </div>
-        <div className="flex overflow-x-auto gap-1 pb-2 no-scrollbar">
-          {TABS.map(({ icon: Icon, label, key }, i) => (
-            <button
-              key={key}
-              onClick={() => setTab(i)}
-              className={`flex flex-col items-center justify-center py-2 px-2 rounded-lg min-w-[60px] flex-shrink-0 transition-colors ${tab === i ? 'bg-white text-primary' : 'bg-white/20 text-white/70'}`}
-            >
-              <Icon className="w-4 h-4 mb-1" />
-              <span className="text-[10px] font-bold">{label}</span>
-            </button>
-          ))}
-        </div>
       </div>
       <div className="p-4 flex-1">
         {tab === 0 && <TabInfo act={act} A={A} />}
@@ -122,17 +110,32 @@ export function ActivityFormModal({ db, initial, onClose, onSave, onQuickUpdate,
         {tab === 6 && <TabGoles act={act} A={A} Q={Q} db={db} />}
         {tab === 7 && <TabExtras act={act} A={A} db={db} />}
       </div>
-      <div className="fixed bottom-4 left-4 right-4 flex gap-3">
+
+      <div className="fixed bottom-4 left-4 right-4 bg-white rounded-2xl shadow-lg shadow-black/10 border border-surface-dark flex z-50 p-2 safe-area-bottom mb-2">
+        <div className="flex overflow-x-auto gap-1 no-scrollbar max-w-full">
+          {TABS.map(({ icon: Icon, label, key }, i) => (
+            <button
+              key={key}
+              onClick={() => setTab(i)}
+              className={`flex flex-col items-center justify-center py-2 px-2 rounded-xl transition-colors flex-1 min-w-[60px] ${tab === i ? 'text-primary bg-primary/10' : 'text-text-muted hover:text-dark'}`}
+            >
+              <Icon className="w-5 h-5 mb-0.5" />
+              <span className="text-[8px] font-bold">{label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="fixed bottom-24 left-4 right-4 mb-2 flex items-center gap-3">
         {tab > 0 && (
-          <button onClick={() => setTab((t) => t - 1)} className="flex-1 py-3 bg-surface-dark rounded-xl text-dark font-bold cursor-pointer flex items-center justify-center gap-2">
-            <ChevronLeft className="w-4 h-4" />
-            {TABS[tab - 1].label}
+          <button onClick={() => setTab((t) => t - 1)} className="w-12 h-12 bg-white rounded-xl shadow-lg shadow-black/10 border border-surface-dark text-dark font-bold cursor-pointer flex items-center justify-center">
+            <ChevronLeft className="w-5 h-5" />
           </button>
         )}
+        <div className="flex-1" />
         {tab < TABS.length - 1 && (
-          <button onClick={() => setTab((t) => t + 1)} className="flex-1 py-3 bg-primary text-white rounded-xl font-bold cursor-pointer flex items-center justify-center gap-2">
-            {TABS[tab + 1].label}
-            <ChevronRight className="w-4 h-4" />
+          <button onClick={() => setTab((t) => t + 1)} className="w-12 h-12 bg-primary rounded-xl shadow-lg shadow-black/10 border border-primary text-white font-bold cursor-pointer flex items-center justify-center">
+            <ChevronRight className="w-5 h-5" />
           </button>
         )}
       </div>
@@ -224,15 +227,15 @@ function TabAsistencia({ act, A, Q, db, onSaveParticipant }) {
       const newId = await onSaveParticipant(p, true, newPlayer.invitadorId);
       const playerId = newId || p.id;
       A('asistentes', [...act.asistentes, playerId]);
-      
+
       if (newPlayer.invitadorId) {
-        A('invitaciones', [...(act.invitaciones || []), { 
-          id: Date.now(), 
-          invitador: newPlayer.invitadorId, 
-          invitado_id: playerId 
+        A('invitaciones', [...(act.invitaciones || []), {
+          id: Date.now(),
+          invitador: newPlayer.invitadorId,
+          invitado_id: playerId
         }]);
       }
-      
+
       setShowNewPlayer(false);
       setNewPlayer({ nombre: '', apellido: '', sexo: 'M', fechaNacimiento: '', invitadorId: null });
       toast.success('Jugador agregado y registrado');
@@ -315,12 +318,12 @@ function TabAsistencia({ act, A, Q, db, onSaveParticipant }) {
                 {here && (
                   <div className="flex gap-1 items-center">
                     {team && <span className="text-[10px] font-bold rounded px-2 py-0.5" style={{ backgroundColor: getTeamBg(team), color: TEAM_COLORS[team] }}>{team}</span>}
-                    <PillCheck 
-                      icon={(act.socials || []).includes(p.id) ? Coffee : Zap} 
+                    <PillCheck
+                      icon={(act.socials || []).includes(p.id) ? Coffee : Zap}
                       label={(act.socials || []).includes(p.id) ? "SOCIAL" : "RECRE"}
-                      active={true} 
-                      onClick={() => toggle('socials', p.id)} 
-                      color={(act.socials || []).includes(p.id) ? "#F59E0B" : "#10B981"} 
+                      active={true}
+                      onClick={() => toggle('socials', p.id)}
+                      color={(act.socials || []).includes(p.id) ? "#F59E0B" : "#10B981"}
                     />
                     <PillCheck icon={Clock} active={punct} onClick={() => toggle('puntuales', p.id)} color="#FFD93D" />
                     <PillCheck icon={BookOpen} active={bib} onClick={() => toggle('biblias', p.id)} color="#4ECDC4" />
@@ -337,9 +340,9 @@ function TabAsistencia({ act, A, Q, db, onSaveParticipant }) {
 
 function TabEquipos({ act, A, Q, db }) {
   const [viewMode, setViewMode] = useState('list');
-  const present = useMemo(() => 
-    db.participants.filter(p => act.asistentes.includes(p.id) && !(act.socials || []).includes(p.id)).sort((a,b) => `${a.apellido} ${a.nombre}`.localeCompare(`${b.apellido} ${b.nombre}`))
-  , [db.participants, act.asistentes, act.socials]);
+  const present = useMemo(() =>
+    db.participants.filter(p => act.asistentes.includes(p.id) && !(act.socials || []).includes(p.id)).sort((a, b) => `${a.apellido} ${a.nombre}`.localeCompare(`${b.apellido} ${b.nombre}`))
+    , [db.participants, act.asistentes, act.socials]);
 
   const setTeam = (pid, team) => {
     const eq = { ...(act.equipos || {}) };
@@ -366,9 +369,9 @@ function TabEquipos({ act, A, Q, db }) {
     const unassigned = present.filter(p => !eq[p.id]);
     const masc = unassigned.filter(p => p.sexo === 'M');
     const fem = unassigned.filter(p => p.sexo === 'F');
-    
+
     [...masc, ...fem].forEach(p => {
-      const best = [...TEAMS].sort((a,b) => counts[a][p.sexo] - counts[b][p.sexo] || counts[a].total - counts[b].total)[0];
+      const best = [...TEAMS].sort((a, b) => counts[a][p.sexo] - counts[b][p.sexo] || counts[a].total - counts[b].total)[0];
       eq[p.id] = best;
       counts[best][p.sexo]++;
       counts[best].total++;
@@ -433,9 +436,9 @@ function TabEquipos({ act, A, Q, db }) {
 }
 
 function TeamTableView({ act, db }) {
-  const present = useMemo(() => 
-    db.participants.filter(p => act.asistentes.includes(p.id)).sort((a,b) => `${a.apellido} ${a.nombre}`.localeCompare(`${b.apellido} ${b.nombre}`))
-  , [db.participants, act.asistentes]);
+  const present = useMemo(() =>
+    db.participants.filter(p => act.asistentes.includes(p.id)).sort((a, b) => `${a.apellido} ${a.nombre}`.localeCompare(`${b.apellido} ${b.nombre}`))
+    , [db.participants, act.asistentes]);
 
   const tableData = useMemo(() => {
     return TEAMS.map(team => {
@@ -510,7 +513,7 @@ function TabJuegos({ act, A, Q }) {
     if (prev) {
       newPos[prev[0]] = newPos[team];
     }
-    
+
     // Toggle logic: if clicking the same position, remove it
     if (newPos[team] === pos) {
       delete newPos[team];
@@ -520,7 +523,7 @@ function TabJuegos({ act, A, Q }) {
 
     const sortedPos = Object.fromEntries(Object.entries(newPos).filter(([, v]) => v != null));
     const newList = (act.juegos || []).map(g => g.id === jid ? { ...g, pos: sortedPos } : g);
-    
+
     Q('game_pos', { juegoId: jid, pos: sortedPos }, 'juegos', newList);
   };
 
@@ -622,10 +625,10 @@ function TabDeportes({ act, A, Q, db }) {
       </div>
       <div className="flex gap-2 mb-4">
         {[
-          {v:'all', l:'Todos', c:'bg-primary'}, 
-          {v:'M', l:'Varones', c:'bg-cyan-600'}, 
-          {v:'F', l:'Mujeres', c:'bg-pink-500'},
-          {v:'MX', l:'Mixto', c:'bg-indigo-600'}
+          { v: 'all', l: 'Todos', c: 'bg-primary' },
+          { v: 'M', l: 'Varones', c: 'bg-cyan-600' },
+          { v: 'F', l: 'Mujeres', c: 'bg-pink-500' },
+          { v: 'MX', l: 'Mixto', c: 'bg-indigo-600' }
         ].map(t => (
           <button key={t.v} onClick={() => setFilterGenero(t.v)} className={cn('flex-1 py-1.5 rounded-lg font-bold text-xs border bg-white text-center px-1', filterGenero === t.v ? `${t.c} text-white border-transparent` : 'text-text-muted border-surface-dark')}>{t.l}</button>
         ))}
@@ -674,11 +677,11 @@ function PartidoEditModal({ part: initialPart, act, db, onClose, onUpd, onDel, Q
   const s2 = (goles || []).filter(g => g.team === part.eq2).length;
 
   const addGoal = (team) => {
-    const tipos = { 'Fútbol':'f', 'Handball':'h', 'Básquet':'b' };
+    const tipos = { 'Fútbol': 'f', 'Handball': 'h', 'Básquet': 'b' };
     const ng = { id: Date.now(), pid: null, tipo: tipos[part.deporte] || 'f', matchId: part.id, team, cant: 1 };
     const all = [...(act.goles || []), ng];
     Q('goal_add', ng, 'goles', all);
-    
+
     // Auto result
     const ns1 = all.filter(g => g.matchId === part.id && g.team === part.eq1).length;
     const ns2 = all.filter(g => g.matchId === part.id && g.team === part.eq2).length;
@@ -704,21 +707,21 @@ function PartidoEditModal({ part: initialPart, act, db, onClose, onUpd, onDel, Q
           <button onClick={onClose} className="w-9 h-9 bg-white/20 rounded flex items-center justify-center">✕</button>
           <div className="flex items-center gap-2">
             <Settings className="w-4 h-4 opacity-50" />
-            <select 
-              value={part.deporte} 
-              onChange={(e) => update('deporte', e.target.value)} 
+            <select
+              value={part.deporte}
+              onChange={(e) => update('deporte', e.target.value)}
               className="bg-transparent text-white border-none font-black text-base cursor-pointer focus:outline-none"
             >
               {DEPORTES.map(d => <option key={d} value={d} className="text-black">{d}</option>)}
             </select>
           </div>
-          <button onClick={() => { if(confirm('¿Borrar?')) { onDel(part.id); onClose(); } }} className="w-9 h-9 bg-red-500/20 rounded flex items-center justify-center text-red-200">
+          <button onClick={() => { if (confirm('¿Borrar?')) { onDel(part.id); onClose(); } }} className="w-9 h-9 bg-red-500/20 rounded flex items-center justify-center text-red-200">
             <Trash2 className="w-5 h-5" />
           </button>
         </div>
         <div className="p-4 bg-background">
           <div className="flex gap-1 mb-4">
-            {['M','F','MX'].map(g => (
+            {['M', 'F', 'MX'].map(g => (
               <button key={g} onClick={() => update('genero', g)} className={cn('flex-1 py-1.5 rounded-lg font-bold text-xs border', part.genero === g ? 'bg-primary text-white' : 'bg-white text-text-muted')}>{g === 'MX' ? 'Mixto' : g === 'M' ? 'Varones' : 'Mujeres'}</button>
             ))}
           </div>
@@ -827,11 +830,11 @@ function TabExtras({ act, A, db }) {
   return (
     <div>
       <div className="mb-4">
-        <div className="flex justify-between items-center mb-3"><Label style={{ color:'#22C55E' }}>⭐ Extras (+5)</Label><button onClick={addE} className="pill-btn bg-green-50 text-green-600">+ Agregar</button></div>
+        <div className="flex justify-between items-center mb-3"><Label style={{ color: '#22C55E' }}>⭐ Extras (+5)</Label><button onClick={addE} className="pill-btn bg-green-50 text-green-600">+ Agregar</button></div>
         <div className="flex flex-col gap-2">{(act.extras || []).map(e => <ExtraRow key={e.id} item={e} color="#22C55E" onDel={(id) => A('extras', act.extras.filter(x => x.id !== id))} onUpd={updE} db={db} act={act} />)}</div>
       </div>
       <div>
-        <div className="flex justify-between items-center mb-3"><Label style={{ color:'#FF6B6B' }}>🔻 Descuentos (-5)</Label><button onClick={addD} className="pill-btn bg-red-50 text-red-500">+ Agregar</button></div>
+        <div className="flex justify-between items-center mb-3"><Label style={{ color: '#FF6B6B' }}>🔻 Descuentos (-5)</Label><button onClick={addD} className="pill-btn bg-red-50 text-red-500">+ Agregar</button></div>
         <div className="flex flex-col gap-2">{(act.descuentos || []).map(d => <ExtraRow key={d.id} item={d} color="#FF6B6B" onDel={(id) => A('descuentos', act.descuentos.filter(x => x.id !== id))} onUpd={updD} db={db} act={act} />)}</div>
       </div>
     </div>
