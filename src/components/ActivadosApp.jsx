@@ -1542,10 +1542,20 @@ function TabAsistencia({ act, A, Q, db, onSaveParticipant }) {
     try {
       const p = { ...newPart(), ...newPlayer, id: db.nextPid };
       const newId = await onSaveParticipant(p, true, newPlayer.invitadorId);
-      A('asistentes', [...act.asistentes, newId || p.id]);
+      const playerId = newId || p.id;
+      A('asistentes', [...act.asistentes, playerId]);
+      
+      if (newPlayer.invitadorId) {
+        A('invitaciones', [...(act.invitaciones || []), { 
+          id: Date.now(), 
+          invitador: newPlayer.invitadorId, 
+          invitado_id: playerId 
+        }]);
+      }
+      
       setShowNewPlayer(false);
       setNewPlayer({ nombre: '', apellido: '', sexo: 'M', fechaNacimiento: '', invitadorId: null });
-      toast.success('Jugador agregado y registrado');
+      toast.success('Jugador agregado y registrado' + (newPlayer.invitadorId ? ' + invitación registrada' : ''));
     } catch (e) {
       toast.error('Error al guardar: ' + e.message);
     } finally {
