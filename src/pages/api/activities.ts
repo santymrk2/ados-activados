@@ -246,15 +246,18 @@ export async function PATCH({ request }: { request: Request }) {
         break;
       }
       case 'goal_add': {
-        await db.insert(schema.goles).values({
+        const result = await db.insert(schema.goles).values({
           activityId,
           participantId: data.pid,
           tipo: data.tipo,
           cant: data.cant || 1,
           team: data.team || null,
           matchId: data.matchId || null,
+        }).returning({ id: schema.goles.id });
+        return new Response(JSON.stringify({ success: true, id: result[0].id }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
         });
-        break;
       }
       case 'goal_remove': {
         // En este caso, removemos por id de gol si viene, o el ultimo del usuario

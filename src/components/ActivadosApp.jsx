@@ -280,7 +280,7 @@ export default function App() {
 
       {showSettings && (
         <div className="fixed inset-0 bg-black/60 z-[60] flex items-end sm:items-center justify-center" onClick={() => setShowSettings(false)}>
-          <div 
+          <div
             className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl"
             onClick={e => e.stopPropagation()}
           >
@@ -293,7 +293,7 @@ export default function App() {
               </div>
             </div>
             <div className="p-4">
-              <button 
+              <button
                 onClick={handleLogout}
                 className="w-full py-3 px-4 bg-red-50 rounded-xl flex items-center gap-3 text-red-600 font-bold"
               >
@@ -339,8 +339,8 @@ function BottomNav({ view, setView }) {
           onClick={() => setView(key)}
           className={cn(
             'relative p-2.5 rounded-xl transition-all duration-200',
-            view === key 
-              ? 'text-primary bg-primary/10' 
+            view === key
+              ? 'text-primary bg-primary/10'
               : 'text-text-muted hover:text-dark'
           )}
         >
@@ -357,6 +357,62 @@ function Dashboard({ db, onOpenSettings }) {
   const [showTopGoleadores, setShowTopGoleadores] = useState(false);
   const [topGoleadoresGender, setTopGoleadoresGender] = useState('M');
 
+  const rankings = useMemo(() => {
+    return (participants || []).map(p => {
+      const stats = calcPts(p.id, activities, participants);
+      return { ...p, ...stats };
+    }).sort((a, b) => b.total - a.total);
+  }, [participants, activities]);
+
+  const stats = useMemo(() => {
+    const jugadoresActivos = (participants || []).filter(p =>
+      (activities || []).some(a => (a.asistentes || []).includes(p.id))
+    ).length;
+
+    const totalGoles = (activities || []).reduce((acc, a) =>
+      acc + (a.goles || []).reduce((s, g) => s + g.cant, 0), 0
+    );
+
+    const avgAsistencia = activities.length
+      ? Math.round(activities.reduce((acc, a) => acc + (a.asistentes || []).length, 0) / activities.length)
+      : 0;
+
+    const masGoles = {
+      f: (activities || []).reduce((acc, a) => acc + (a.goles || []).filter(g => g.tipo === 'f').reduce((s, g) => s + g.cant, 0), 0),
+      h: (activities || []).reduce((acc, a) => acc + (a.goles || []).filter(g => g.tipo === 'h').reduce((s, g) => s + g.cant, 0), 0),
+      b: (activities || []).reduce((acc, a) => acc + (a.goles || []).filter(g => g.tipo === 'b').reduce((s, g) => s + g.cant, 0), 0),
+    };
+
+    const top5ScorersM = rankings
+      .filter(p => p.sexo === 'M')
+      .map(p => ({ ...p, goals: (p.gf || 0) + (p.gh || 0) + (p.gb || 0) }))
+      .filter(p => p.goals > 0)
+      .sort((a, b) => b.goals - a.goals)
+      .slice(0, 5);
+
+    const top5ScorersF = rankings
+      .filter(p => p.sexo === 'F')
+      .map(p => ({ ...p, goals: (p.gf || 0) + (p.gh || 0) + (p.gb || 0) }))
+      .filter(p => p.goals > 0)
+      .sort((a, b) => b.goals - a.goals)
+      .slice(0, 5);
+
+    return {
+      jugadoresActivos,
+      porcentajeActivos: participants.length ? Math.round((jugadoresActivos / participants.length) * 100) : 0,
+      totalGoles,
+      avgAsistencia,
+      masGoles,
+      totalPartidos: (activities || []).reduce((acc, a) => acc + (a.partidos || []).length, 0),
+      top5ScorersM,
+      top5ScorersF
+    };
+  }, [rankings, participants, activities]);
+
+  const lastActs = useMemo(() =>
+    [...activities].sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()).slice(0, 5),
+    [activities]);
+
   return (
     <div>
       <div className="bg-primary text-white p-4 pb-3">
@@ -365,7 +421,7 @@ function Dashboard({ db, onOpenSettings }) {
             <div className="text-2xl font-black tracking-tight" style={{ fontFamily: 'ClashGrotesk, sans-serif' }}>ACTIVADOS</div>
             <h1 className="text-lg font-bold mt-1 opacity-80">Dashboard</h1>
           </div>
-          <button 
+          <button
             onClick={onOpenSettings}
             className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors"
           >
@@ -441,8 +497,8 @@ function Dashboard({ db, onOpenSettings }) {
                   onClick={() => setTopGoleadoresGender(t.val)}
                   className={cn(
                     "flex-1 py-1.5 rounded-lg font-bold text-xs transition-all border",
-                    topGoleadoresGender === t.val 
-                      ? `${t.activeBg} text-white border-transparent shadow-sm` 
+                    topGoleadoresGender === t.val
+                      ? `${t.activeBg} text-white border-transparent shadow-sm`
                       : `bg-white text-text-muted border-surface-dark`
                   )}
                 >
@@ -581,7 +637,7 @@ function RankRow({ p, pos, activities, showPts }) {
       <RankBadge pos={pos} />
       <Avatar p={p} size={36} />
       <div className="flex-1 z-10 min-w-0">
-        <div className="font-bold truncate flex items-center gap-1"><SexBadge sex={p.sexo} /> {p.nombre} {p.apellido}</div>
+        <div className="font-bold truncate">{p.nombre} {p.apellido}</div>
         <div className="text-xs mt-1 flex gap-2 flex-wrap">
           <span className="text-text-muted">{p.acts} act.</span>
           {p.gf > 0 && <span className="text-text-muted font-bold">{p.gf}</span>}
@@ -791,7 +847,7 @@ function ActivityView({ db, act, onEdit, onClose }) {
                     {playerRank[1] && (
                       <div className="flex flex-col items-center flex-1 min-w-0">
                         <Avatar p={playerRank[1]} size={48} />
-                        <div className="text-xs font-bold mt-1 text-center truncate w-full px-1 flex items-center justify-center gap-1"><SexBadge sex={playerRank[1].sexo} className="w-4 h-4" /> {playerRank[1].nombre} {playerRank[1].apellido[0]}.</div>
+                        <div className="text-xs font-bold mt-1 text-center truncate w-full px-1">{playerRank[1].nombre} {playerRank[1].apellido[0]}.</div>
                         {act.equipos?.[playerRank[1].id] && (
                           <span className="text-[10px] font-bold" style={{ color: TEAM_COLORS[act.equipos[playerRank[1].id]] }}>{act.equipos[playerRank[1].id]}</span>
                         )}
@@ -806,7 +862,7 @@ function ActivityView({ db, act, onEdit, onClose }) {
                     {/* 1° lugar — centro, más alto */}
                     <div className="flex flex-col items-center flex-1 min-w-0">
                       <Avatar p={playerRank[0]} size={64} />
-                      <div className="text-sm font-black mt-1 text-center truncate w-full px-1 flex items-center justify-center gap-1"><SexBadge sex={playerRank[0].sexo} className="w-4 h-4" /> {playerRank[0].nombre} {playerRank[0].apellido[0]}.</div>
+                      <div className="text-sm font-black mt-1 text-center truncate w-full px-1">{playerRank[0].nombre} {playerRank[0].apellido[0]}.</div>
                       {act.equipos?.[playerRank[0].id] && (
                         <span className="text-[10px] font-bold" style={{ color: TEAM_COLORS[act.equipos[playerRank[0].id]] }}>{act.equipos[playerRank[0].id]}</span>
                       )}
@@ -821,7 +877,7 @@ function ActivityView({ db, act, onEdit, onClose }) {
                     {playerRank[2] && (
                       <div className="flex flex-col items-center flex-1 min-w-0">
                         <Avatar p={playerRank[2]} size={40} />
-                        <div className="text-xs font-bold mt-1 text-center truncate w-full px-1 flex items-center justify-center gap-1"><SexBadge sex={playerRank[2].sexo} className="w-4 h-4" /> {playerRank[2].nombre} {playerRank[2].apellido[0]}.</div>
+                        <div className="text-xs font-bold mt-1 text-center truncate w-full px-1">{playerRank[2].nombre} {playerRank[2].apellido[0]}.</div>
                         {act.equipos?.[playerRank[2].id] && (
                           <span className="text-[10px] font-bold" style={{ color: TEAM_COLORS[act.equipos[playerRank[2].id]] }}>{act.equipos[playerRank[2].id]}</span>
                         )}
@@ -846,7 +902,7 @@ function ActivityView({ db, act, onEdit, onClose }) {
                         <div className="w-7 h-7 flex items-center justify-center font-light text-sm text-text-muted flex-shrink-0">{i + 4}</div>
                         <Avatar p={p} size={30} />
                         <div className="flex-1 min-w-0">
-                          <div className="font-bold text-sm truncate flex items-center gap-1"><SexBadge sex={p.sexo} /> {p.nombre} {p.apellido}</div>
+                          <div className="font-bold text-sm truncate">{p.nombre} {p.apellido}</div>
                           <div className="text-xs text-text-muted mt-0.5 flex items-center gap-1">
                             {act.equipos?.[p.id] && (
                               <span style={{ color: TEAM_COLORS[act.equipos[p.id]] }} className="font-bold">{act.equipos[p.id]} · </span>
@@ -902,8 +958,8 @@ function ActivityView({ db, act, onEdit, onClose }) {
                             </div>
                             <Avatar p={p} size={30} />
                             <div className="flex-1 min-w-0">
-                              <div className="font-bold text-sm truncate flex items-center gap-1">
-                                <SexBadge sex={p.sexo} /> {p.nombre} {p.apellido}
+                              <div className="font-bold text-sm truncate">
+                                {p.nombre} {p.apellido}
                               </div>
                               {act.equipos?.[p.id] && (
                                 <div className="text-[10px] font-bold" style={{ color: TEAM_COLORS[act.equipos[p.id]] }}>
@@ -1046,7 +1102,7 @@ function ParticipantsList({ db, onNew, onEdit, onDelete, onViewDetail }) {
   return (
     <div>
       <PageHeader title="Jugadores" sub={`${db.participants.length} registrados`} />
-      <div className="p-4 pt-0">
+      <div className="p-4">
         <button
           onClick={onNew}
           className="w-full py-4 bg-accent text-dark font-bold text-base rounded-xl border-none cursor-pointer mb-3 flex items-center justify-center gap-2 min-h-[52px]"
@@ -1115,7 +1171,6 @@ function ParticipantsList({ db, onNew, onEdit, onDelete, onViewDetail }) {
                   <div className="flex-1 min-w-0">
                     <div className="font-bold truncate">{p.nombre} {p.apellido}</div>
                     <div className="text-xs mt-1 flex gap-2 flex-wrap items-center">
-                      <SexBadge sex={p.sexo} />
                       <span className="text-text-muted">{getEdad(p.fechaNacimiento)}a · {p.acts} act.</span>
                     </div>
                   </div>
@@ -1272,7 +1327,7 @@ function ActivityForm({ db, initial, onClose, onSave, onQuickUpdate, onSaveParti
   actRef.current = act;
 
   const A = (k, v) => setAct((a) => ({ ...a, [k]: v }));
-  
+
   // Custom update for atomized fields
   const Q = (type, data, k, v) => {
     setAct((a) => ({ ...a, [k]: v }));
@@ -1335,7 +1390,7 @@ function ActivityForm({ db, initial, onClose, onSave, onQuickUpdate, onSaveParti
         doSave(actRef.current);
       }, 3000); // Delay mayor para existentes (los cambios críticos son atomizados via Q)
     }
-    
+
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
@@ -1443,7 +1498,7 @@ function TabAsistencia({ act, A, Q, db, onSaveParticipant }) {
     const c = act[key] || [];
     const isIncluded = c.includes(id);
     const newValue = isIncluded ? c.filter((x) => x !== id) : [...c, id];
-    
+
     if (key === 'asistentes') {
       Q('attendance', { participantId: id, value: !isIncluded }, key, newValue);
     } else if (key === 'puntuales') {
@@ -1572,9 +1627,9 @@ function TabAsistencia({ act, A, Q, db, onSaveParticipant }) {
         </div>
         <div className="flex items-center gap-2">
           <Label style={{ margin: 0 }}>Asistencia ({sorted.length})</Label>
-          <HelpInfo 
-            title="Control de Asistencia" 
-            text="Marcá a los participantes presentes, si fueron puntuales (+5) y si trajeron su biblia (+5). Podés filtrar por nombre, género o limpiar la lista." 
+          <HelpInfo
+            title="Control de Asistencia"
+            text="Marcá a los participantes presentes, si fueron puntuales (+5) y si trajeron su biblia (+5). Podés filtrar por nombre, género o limpiar la lista."
           />
           <div className="flex gap-2 ml-auto">
             <button onClick={() => setShowNewPlayer(true)} className="pill-btn bg-primary/10 text-primary text-xs flex items-center gap-1">
@@ -1622,7 +1677,7 @@ function TabAsistencia({ act, A, Q, db, onSaveParticipant }) {
                   <div className="font-bold text-sm" style={{ color: here ? '#1a1a1a' : '#999' }}>
                     {p.nombre} {p.apellido}
                   </div>
-                  <div className="text-xs text-text-muted"><SexBadge sex={p.sexo} /> · {getEdad(p.fechaNacimiento)}a</div>
+                  <div className="text-xs text-text-muted">{getEdad(p.fechaNacimiento)}a</div>
                 </div>
                 {here && (
                   <div className="flex gap-1 items-center">
@@ -1707,9 +1762,9 @@ function TabEquipos({ act, A, Q, db }) {
     <div>
       <div className="flex items-center gap-2 mb-3">
         <Label style={{ margin: 0 }}>Equipos</Label>
-        <HelpInfo 
-          title="Asignación de Equipos" 
-          text="Asigná a cada asistente a uno de los 4 equipos (E1, E2, E3, E4). Podés usar los botones de Autocompletar o Redistribuir para balancearlos por género automáticamente." 
+        <HelpInfo
+          title="Asignación de Equipos"
+          text="Asigná a cada asistente a uno de los 4 equipos (E1, E2, E3, E4). Podés usar los botones de Autocompletar o Redistribuir para balancearlos por género automáticamente."
         />
       </div>
       {present.length === 0 && <Empty text="Sin asistentes (marcá asistencia primero)" />}
@@ -1793,7 +1848,7 @@ function TabEquipos({ act, A, Q, db }) {
                     <Avatar p={p} size={32} />
                     <div className="flex-1">
                       <div className="font-bold text-sm">{p.nombre} {p.apellido}</div>
-                      <div className="text-xs text-text-muted"><SexBadge sex={p.sexo} /> · {getEdad(p.fechaNacimiento)}a</div>
+                  <div className="text-xs text-text-muted">{getEdad(p.fechaNacimiento)}a</div>
                     </div>
                     <div className="flex gap-1">
                       {TEAMS.map((t) => (
@@ -2137,9 +2192,9 @@ function TabJuegos({ act, A, Q }) {
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-2">
           <Label style={{ margin: 0 }}>Juegos</Label>
-          <HelpInfo 
-            title="Puntajes de Juegos" 
-            text="🥇 1° lugar: 10 pts | 🥈 2° lugar: 7 pts | 🥉 3° lugar: 4 pts | 🏅 4° lugar: 2 pts. Tocá +Juego para agregar y asigná las posiciones." 
+          <HelpInfo
+            title="Puntajes de Juegos"
+            text="🥇 1° lugar: 10 pts | 🥈 2° lugar: 7 pts | 🥉 3° lugar: 4 pts | 🏅 4° lugar: 2 pts. Tocá +Juego para agregar y asigná las posiciones."
           />
         </div>
         <button onClick={add} className="pill-btn bg-indigo-50 text-primary">
@@ -2279,8 +2334,8 @@ function PartidosView({ partidos }) {
             onClick={() => setFilterGenero(t.val)}
             className={cn(
               "flex-1 py-1.5 rounded-lg font-bold text-xs transition-all border",
-              filterGenero === t.val 
-                ? `${t.activeBg} text-white border-transparent shadow-sm` 
+              filterGenero === t.val
+                ? `${t.activeBg} text-white border-transparent shadow-sm`
                 : "bg-white text-text-muted border-surface-dark"
             )}
           >
@@ -2324,16 +2379,16 @@ function PartidoReadOnlyCard({ part }) {
           backgroundColor: isWinner
             ? '#22C55E'
             : isDraw
-            ? '#EAB308'
-            : isLoser
-            ? '#f5f5f5'
-            : getTeamBg(team),
+              ? '#EAB308'
+              : isLoser
+                ? '#f5f5f5'
+                : getTeamBg(team),
           color: isWinner || isDraw ? '#fff' : isLoser ? '#ccc' : TEAM_COLORS[team],
           boxShadow: isWinner
             ? '0 0 0 3px #22C55E44'
             : isDraw
-            ? '0 0 0 3px #EAB30844'
-            : 'none',
+              ? '0 0 0 3px #EAB30844'
+              : 'none',
         }}
       >
         {team}
@@ -2393,9 +2448,9 @@ function TabDeportes({ act, A, Q, db }) {
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center gap-2">
           <Label style={{ margin: 0 }}>Partidos</Label>
-          <HelpInfo 
-            title="Puntajes de Deportes" 
-            text="✅ Ganó: +4 pts | 🤝 Empate: +2 pts | ❌ Perdió: +1 pt. Agregá cada partido, elegí qué equipos jugaron y el resultado." 
+          <HelpInfo
+            title="Puntajes de Deportes"
+            text="✅ Ganó: +4 pts | 🤝 Empate: +2 pts | ❌ Perdió: +1 pt. Agregá cada partido, elegí qué equipos jugaron y el resultado."
           />
         </div>
         <button onClick={add} className="pill-btn bg-teal-50 text-teal-600">
@@ -2415,8 +2470,8 @@ function TabDeportes({ act, A, Q, db }) {
             onClick={() => setFilterGenero(t.val)}
             className={cn(
               "flex-1 py-1.5 rounded-lg font-bold text-xs transition-all border",
-              filterGenero === t.val 
-                ? `${t.activeBg} text-white border-transparent shadow-sm` 
+              filterGenero === t.val
+                ? `${t.activeBg} text-white border-transparent shadow-sm`
                 : "bg-white text-text-muted border-surface-dark"
             )}
           >
@@ -2430,9 +2485,9 @@ function TabDeportes({ act, A, Q, db }) {
       ) : (
         <div className="flex flex-col gap-2">
           {filtered.map((part) => (
-            <PartidoResumenCard 
-              key={part.id} 
-              part={part} 
+            <PartidoResumenCard
+              key={part.id}
+              part={part}
               act={act}
               onClick={() => setSelectedPartido(part)}
             />
@@ -2451,6 +2506,7 @@ function TabDeportes({ act, A, Q, db }) {
             del(selectedPartido.id);
             setSelectedPartido(null);
           }}
+          Q={Q}
         />
       )}
     </div>
@@ -2653,7 +2709,7 @@ function PartidoResumenCard({ part, act, onClick }) {
   const isEmpate = score1 === score2 && score1 > 0;
 
   return (
-    <div 
+    <div
       onClick={onClick}
       className="bg-white rounded-xl border border-surface-dark p-3 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-transform"
     >
@@ -2684,7 +2740,7 @@ function PartidoResumenCard({ part, act, onClick }) {
   );
 }
 
-function PartidoEditModal({ part, act, db, onClose, onUpd, onDel }) {
+function PartidoEditModal({ part, act, db, onClose, onUpd, onDel, Q }) {
   const [localPart, setLocalPart] = useState(part);
 
   useEffect(() => {
@@ -2697,15 +2753,11 @@ function PartidoEditModal({ part, act, db, onClose, onUpd, onDel }) {
   };
 
   const goles = (act.goles || []).filter(g => g.matchId === part.id);
-  const score1 = localPart.eq1 ? localPart.eq1.split('').reduce((acc, _, i) => {
-    const g = act.goles?.filter(gol => gol.matchId === part.id && gol.team === localPart.eq1);
-    return acc + (g?.length || 0);
-  }, 0) : 0;
-  const actualScore1 = (act.goles || []).filter(g => g.matchId === part.id && g.team === localPart.eq1).length;
-  const actualScore2 = (act.goles || []).filter(g => g.matchId === part.id && g.team === localPart.eq2).length;
+  const actualScore1 = goles.filter(g => g.team === localPart.eq1).length;
+  const actualScore2 = goles.filter(g => g.team === localPart.eq2).length;
 
   const addGoal = (team) => {
-    const tipoMap = { 'Fútbol': 'f', 'Handball': 'h', 'Básquet': 'b' };
+    const tipoMap = { 'Fútbol': 'f', 'Handball': 'h', 'Básquet': 'b', 'Vóley': 'v' };
     const newGoal = {
       id: Date.now(),
       pid: null,
@@ -2714,29 +2766,39 @@ function PartidoEditModal({ part, act, db, onClose, onUpd, onDel }) {
       team: team,
       cant: 1
     };
-    const newGoles = [...(act.goles || []), newGoal];
-    const currentGoles = act.goles || [];
-    const allGoles = [...currentGoles, newGoal];
-    const score1New = allGoles.filter(g => g.matchId === part.id && g.team === localPart.eq1).length;
-    const score2New = allGoles.filter(g => g.matchId === part.id && g.team === localPart.eq2).length;
+
+    const allGoles = [...(act.goles || []), newGoal];
+    Q('goal_add', newGoal, 'goles', allGoles);
+
+    // Update result based on new score
+    const s1 = allGoles.filter(g => g.matchId === part.id && g.team === localPart.eq1).length;
+    const s2 = allGoles.filter(g => g.matchId === part.id && g.team === localPart.eq2).length;
     let newRes = 'empate';
-    if (score1New > score2New) newRes = 'eq1';
-    else if (score2New > score1New) newRes = 'eq2';
-    onUpd('resultado', newRes);
+    if (s1 > s2) newRes = 'eq1';
+    else if (s2 > s1) newRes = 'eq2';
+    if (newRes !== localPart.resultado) {
+      onUpd('resultado', newRes);
+    }
   };
 
   const delGoal = (id) => {
-    const currentGoles = act.goles || [];
-    const allGoles = currentGoles.filter(g => g.id !== id);
-    const score1New = allGoles.filter(g => g.matchId === part.id && g.team === localPart.eq1).length;
-    const score2New = allGoles.filter(g => g.matchId === part.id && g.team === localPart.eq2).length;
+    const allGoles = (act.goles || []).filter(g => g.id !== id);
+    Q('goal_remove', { id }, 'goles', allGoles);
+
+    // Update result based on new score
+    const s1 = allGoles.filter(g => g.matchId === part.id && g.team === localPart.eq1).length;
+    const s2 = allGoles.filter(g => g.matchId === part.id && g.team === localPart.eq2).length;
     let newRes = 'empate';
-    if (score1New > score2New) newRes = 'eq1';
-    else if (score2New > score1New) newRes = 'eq2';
-    onUpd('resultado', newRes);
+    if (s1 > s2) newRes = 'eq1';
+    else if (s2 > s1) newRes = 'eq2';
+    if (newRes !== localPart.resultado) {
+      onUpd('resultado', newRes);
+    }
   };
 
   const updGoal = (id, pid) => {
+    const newList = (act.goles || []).map(g => g.id === id ? { ...g, pid } : g);
+    Q('goal_update', { id, pid }, 'goles', newList);
   };
 
   const getTeamPlayers = (team) => {
@@ -2761,7 +2823,7 @@ function PartidoEditModal({ part, act, db, onClose, onUpd, onDel }) {
 
   return (
     <div className="fixed inset-0 bg-black/60 z-[60] flex items-end sm:items-center justify-center" onClick={onClose}>
-      <div 
+      <div
         className="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
@@ -2800,8 +2862,8 @@ function PartidoEditModal({ part, act, db, onClose, onUpd, onDel }) {
                 onClick={() => update('genero', g)}
                 className={cn(
                   "flex-1 py-2 rounded-xl font-bold text-sm transition-all border",
-                  localPart.genero === g 
-                    ? "bg-primary text-white border-primary" 
+                  localPart.genero === g
+                    ? "bg-primary text-white border-primary"
                     : "bg-white text-text-muted border-surface-dark"
                 )}
               >
@@ -2860,10 +2922,7 @@ function PartidoEditModal({ part, act, db, onClose, onUpd, onDel }) {
                     <div key={g.id} className="flex gap-1 items-center mb-1">
                       <select
                         value={g.pid || ''}
-                        onChange={(e) => {
-                          const newGoles = (act.goles || []).map(go => go.id === g.id ? { ...go, pid: Number(e.target.value) || null } : go);
-                          onUpd('goles', newGoles);
-                        }}
+                        onChange={(e) => updGoal(g.id, Number(e.target.value) || null)}
                         className="flex-1 text-xs p-1 border rounded bg-white"
                       >
                         <option value="">— Quién? —</option>
@@ -2871,12 +2930,8 @@ function PartidoEditModal({ part, act, db, onClose, onUpd, onDel }) {
                           <option key={p.id} value={p.id}>{p.nombre} {p.apellido[0]}.</option>
                         ))}
                       </select>
-                      <button 
-                        onClick={() => {
-                          const newGoles = (act.goles || []).filter(go => go.id !== g.id);
-                          onUpd('goles', newGoles);
-                          delGoal(g.id);
-                        }} 
+                      <button
+                        onClick={() => delGoal(g.id)}
                         className="w-6 h-6 rounded bg-red-100 text-red-500 flex items-center justify-center text-xs"
                       >✕</button>
                     </div>
@@ -2992,9 +3047,9 @@ function TabInvitados({ act, A, db, onSaveParticipant, onUpdateAct }) {
       <div className="flex justify-between items-center mb-2">
         <div className="flex items-center gap-2">
           <Label style={{ margin: 0 }}>Invitaciones</Label>
-          <HelpInfo 
-            title="Puntajes de Invitados" 
-            text="👤 Quien invita: +5 pts | 🆕 Invitado nuevo: +3 pts. Si el invitado es nuevo, primero agregalo como participante con el botón 'Nuevo'." 
+          <HelpInfo
+            title="Puntajes de Invitados"
+            text="👤 Quien invita: +5 pts | 🆕 Invitado nuevo: +3 pts. Si el invitado es nuevo, primero agregalo como participante con el botón 'Nuevo'."
           />
         </div>
         <button onClick={add} className="pill-btn bg-teal-50 text-teal-600">
@@ -3043,7 +3098,7 @@ function TabInvitados({ act, A, db, onSaveParticipant, onUpdateAct }) {
                     <Avatar p={invitado} size={34} />
                     <div className="flex-1">
                       <div className="font-bold text-sm">{invitado.nombre} {invitado.apellido}</div>
-                      <div className="text-xs text-text-muted"><SexBadge sex={invitado.sexo} /> · {getEdad(invitado.fechaNacimiento)}a</div>
+                      <div className="text-xs text-text-muted">{getEdad(invitado.fechaNacimiento)}a</div>
                     </div>
                     <button
                       onClick={() => upd(inv.id, 'invitado_id', null)}
@@ -3130,12 +3185,12 @@ function TabGoles({ act, A, Q, db }) {
                 ['f', 'F'],
                 ['h', 'H'],
                 ['b', 'B'],
-                ].map(([t, label]) => (
-                  <button
-                    key={t}
-                    onClick={() => upd(g.id, 'tipo', t)}
-                    className="w-11 h-11 rounded-xl cursor-pointer text-sm font-bold flex items-center justify-center"
-                  >
+              ].map(([t, label]) => (
+                <button
+                  key={t}
+                  onClick={() => upd(g.id, 'tipo', t)}
+                  className="w-11 h-11 rounded-xl cursor-pointer text-sm font-bold flex items-center justify-center"
+                >
                   {label}
                 </button>
               ))}
@@ -3248,22 +3303,22 @@ function TabExtras({ act, A, db }) {
 
 function Avatar({ p, size = 36 }) {
   const initials = `${p.nombre?.[0] || ''}${p.apellido?.[0] || ''}`.toUpperCase();
-  const colors = ['#FF6B6B', '#4ECDC4', '#FFD93D', '#A78BFA', '#FF9F43', '#26C6DA', '#F06292', '#66BB6A'];
-  const c = colors[(p.id || 0) % colors.length];
+  const isM = p.sexo === 'M';
+  const sexColor = isM ? '#0891B2' : '#EC4899'; // cyan-600 o pink-500
   return (
     <div
       className="rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center"
       style={{
         width: size,
         height: size,
-        backgroundColor: c + '22',
-        border: `2px solid ${c}44`,
+        backgroundColor: '#E5E5E5',
+        border: `2px solid ${sexColor}`,
       }}
     >
       {p.foto ? (
         <img src={p.foto} className="w-full h-full object-cover" />
       ) : (
-        <span style={{ fontSize: size * 0.36, fontWeight: 900, color: c }}>{initials || '?'}</span>
+        <span style={{ fontSize: size * 0.36, fontWeight: 900, color: '#666666' }}>{initials || '?'}</span>
       )}
     </div>
   );
@@ -3313,12 +3368,6 @@ function PlayerDetail({ player, activities, participants, onEdit, onClose }) {
           <div>
             <div className="font-black text-2xl">{player.nombre} {player.apellido}</div>
             <div className="flex gap-3 mt-1 text-sm opacity-80">
-              <span className="flex items-center gap-2">
-                <SexBadge sex={player.sexo} />
-                <span className={player.sexo === 'M' ? 'text-cyan-300 font-bold' : 'text-pink-300 font-bold'}>
-                  {player.sexo === 'M' ? 'Varón' : 'Mujer'}
-                </span>
-              </span>
               <span>· {getEdad(player.fechaNacimiento)} años</span>
             </div>
             <div className="flex gap-2 mt-2">
@@ -3404,18 +3453,18 @@ function HelpInfo({ title, text }) {
   if (!text) return null;
   return (
     <>
-      <button 
+      <button
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }}
         className="w-6 h-6 rounded-lg flex items-center justify-center bg-gray-100 text-gray-500 hover:bg-primary/10 hover:text-primary transition-all active:scale-90"
       >
         <Info className="w-3.5 h-3.5" />
       </button>
       {open && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-6 backdrop-blur-sm"
           onClick={() => setOpen(false)}
         >
-          <div 
+          <div
             className="bg-white rounded-3xl p-6 shadow-2xl max-w-sm w-full"
             onClick={e => e.stopPropagation()}
           >
@@ -3431,7 +3480,7 @@ function HelpInfo({ title, text }) {
             <div className="text-sm text-text-muted leading-relaxed font-medium">
               {text}
             </div>
-            <button 
+            <button
               onClick={() => setOpen(false)}
               className="w-full mt-6 py-3 bg-primary text-white font-bold text-sm rounded-2xl shadow-lg shadow-primary/25 active:scale-[0.98] transition-all"
             >
