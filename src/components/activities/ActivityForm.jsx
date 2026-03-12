@@ -2,10 +2,10 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Toaster, toast } from 'sonner';
 import { 
   FileText, Users, LayoutGrid, Gamepad2, Award, Mail, Plus, Trophy,
-  ChevronLeft, ChevronRight, Clock, BookOpen, Search, ArrowUpDown, X, List, Table2
+  ChevronLeft, ChevronRight, Clock, BookOpen, Search, ArrowUpDown, X, List, Table2, Coffee, Zap, Trash2, Settings
 } from 'lucide-react';
 import { newAct, newPart, TEAMS, getEdad, TEAM_COLORS, getTeamBg, PTS, DEPORTES, GENEROS } from '../../lib/constants';
-import { Modal, Label, Empty, SegmentedButtons } from '../ui/Common';
+import { Modal, Label, Empty, SegmentedButtons, PillCheck } from '../ui/Common';
 import { SexBadge, Chip } from '../ui/Badges';
 import { Avatar } from '../ui/Avatar';
 import { HelpInfo } from '../ui/HelpInfo';
@@ -79,7 +79,7 @@ export function ActivityFormModal({ db, initial, onClose, onSave, onQuickUpdate,
   }, [act, doSave]);
 
   const statusIndicator = {
-    saved: { color: 'text-green-500', label: 'Guardado ✓' },
+    saved: { color: 'text-accent', label: 'Guardado' },
     saving: { color: 'text-yellow-500', label: 'Guardando...' },
     error: { color: 'text-red-500', label: 'Error al guardar' },
   }[saveStatus];
@@ -95,7 +95,7 @@ export function ActivityFormModal({ db, initial, onClose, onSave, onQuickUpdate,
             <div className="font-black text-lg">{act.id ? 'Editar' : 'Nueva'} Actividad</div>
             <div className="text-xs opacity-70">{act.titulo || 'Sin título'} · {formatDate(act.fecha)}</div>
           </div>
-          <span className={`text-xs font-bold ${saveStatus === 'saved' ? 'text-green-300' : saveStatus === 'saving' ? 'text-yellow-300' : 'text-red-300'}`}>
+          <span className={`text-xs font-bold ${saveStatus === 'saved' ? 'text-accent' : saveStatus === 'saving' ? 'text-yellow-300' : 'text-red-300'}`}>
             {statusIndicator.label}
           </span>
         </div>
@@ -168,6 +168,23 @@ function TabAsistencia({ act, A, Q, db, onSaveParticipant }) {
 
     if (key === 'asistentes') {
       Q('attendance', { participantId: id, value: !isIncluded }, key, newValue);
+      // When removing attendance, also remove from social/punctual/bible/teams
+      if (isIncluded) {
+        A('socials', (act.socials || []).filter(x => x !== id));
+        A('puntuales', (act.puntuales || []).filter(x => x !== id));
+        A('biblias', (act.biblias || []).filter(x => x !== id));
+        const newEq = { ...act.equipos };
+        delete newEq[id];
+        A('equipos', newEq);
+      }
+    } else if (key === 'socials') {
+      A(key, newValue);
+      // If marking as social, remove from teams
+      if (!isIncluded) {
+        const newEq = { ...act.equipos };
+        delete newEq[id];
+        A('equipos', newEq);
+      }
     } else if (key === 'puntuales') {
       Q('puntuales', { participantId: id, value: !isIncluded }, key, newValue);
     } else if (key === 'biblias') {
@@ -285,9 +302,9 @@ function TabAsistencia({ act, A, Q, db, onSaveParticipant }) {
           const bib = (act.biblias || []).includes(p.id);
           const team = act.equipos?.[p.id];
           return (
-            <div key={p.id} className="rounded-lg border bg-white" style={{ borderColor: here ? (TEAM_COLORS[team] || '#4342FF44') : '#e5e5e5' }}>
+            <div key={p.id} className="rounded-lg border bg-white border-surface-dark">
               <div className="flex items-center p-3 gap-3">
-                <div onClick={() => toggle('asistentes', p.id)} className="w-6 h-6 rounded-md cursor-pointer flex items-center justify-center font-bold text-xs" style={{ backgroundColor: here ? (TEAM_COLORS[team] || '#4342FF') : '#f5f5f5', color: here ? 'white' : '#999', border: !here ? '1px solid #e5e5e5' : 'none' }}>
+                <div onClick={() => toggle('asistentes', p.id)} className="w-6 h-6 rounded-md cursor-pointer flex items-center justify-center font-bold text-xs" style={{ backgroundColor: here ? '#4342FF' : '#f5f5f5', color: here ? 'white' : '#999', border: !here ? '1px solid #e5e5e5' : 'none' }}>
                   {here && '✓'}
                 </div>
                 <Avatar p={p} size={30} />
@@ -298,6 +315,13 @@ function TabAsistencia({ act, A, Q, db, onSaveParticipant }) {
                 {here && (
                   <div className="flex gap-1 items-center">
                     {team && <span className="text-[10px] font-bold rounded px-2 py-0.5" style={{ backgroundColor: getTeamBg(team), color: TEAM_COLORS[team] }}>{team}</span>}
+                    <PillCheck 
+                      icon={(act.socials || []).includes(p.id) ? Coffee : Zap} 
+                      label={(act.socials || []).includes(p.id) ? "SOCIAL" : "RECRE"}
+                      active={true} 
+                      onClick={() => toggle('socials', p.id)} 
+                      color={(act.socials || []).includes(p.id) ? "#F59E0B" : "#10B981"} 
+                    />
                     <PillCheck icon={Clock} active={punct} onClick={() => toggle('puntuales', p.id)} color="#FFD93D" />
                     <PillCheck icon={BookOpen} active={bib} onClick={() => toggle('biblias', p.id)} color="#4ECDC4" />
                   </div>
@@ -311,19 +335,11 @@ function TabAsistencia({ act, A, Q, db, onSaveParticipant }) {
   );
 }
 
-function PillCheck({ icon: Icon, active, onClick, color }) {
-  return (
-    <button onClick={onClick} className="w-8 h-8 rounded-lg cursor-pointer flex items-center justify-center transition-all" style={{ backgroundColor: active ? color : '#f5f5f5', color: active ? 'white' : '#999', border: `1px solid ${active ? color : '#e5e5e5'}` }}>
-      <Icon className="w-4 h-4" />
-    </button>
-  );
-}
-
 function TabEquipos({ act, A, Q, db }) {
   const [viewMode, setViewMode] = useState('list');
   const present = useMemo(() => 
-    db.participants.filter(p => act.asistentes.includes(p.id)).sort((a,b) => `${a.apellido} ${a.nombre}`.localeCompare(`${b.apellido} ${b.nombre}`))
-  , [db.participants, act.asistentes]);
+    db.participants.filter(p => act.asistentes.includes(p.id) && !(act.socials || []).includes(p.id)).sort((a,b) => `${a.apellido} ${a.nombre}`.localeCompare(`${b.apellido} ${b.nombre}`))
+  , [db.participants, act.asistentes, act.socials]);
 
   const setTeam = (pid, team) => {
     const eq = { ...(act.equipos || {}) };
@@ -399,7 +415,6 @@ function TabEquipos({ act, A, Q, db }) {
                 <Avatar p={p} size={32} />
                 <div className="flex-1">
                   <div className="font-bold text-sm">{p.nombre} {p.apellido}</div>
-                  <SexBadge sex={p.sexo} className="w-3.5 h-3.5" />
                 </div>
                 <div className="flex gap-1">
                   {TEAMS.map(t => (
@@ -606,8 +621,13 @@ function TabDeportes({ act, A, Q, db }) {
         <button onClick={add} className="pill-btn bg-teal-50 text-teal-600">+ Partido</button>
       </div>
       <div className="flex gap-2 mb-4">
-        {[{v:'all', l:'Todos', c:'bg-primary'}, {v:'M', l:'Varones', c:'bg-cyan-600'}, {v:'F', l:'Mujeres', c:'bg-pink-500'}].map(t => (
-          <button key={t.v} onClick={() => setFilterGenero(t.v)} className={cn('flex-1 py-1.5 rounded-lg font-bold text-xs border bg-white', filterGenero === t.v ? `${t.c} text-white border-transparent` : 'text-text-muted border-surface-dark')}>{t.l}</button>
+        {[
+          {v:'all', l:'Todos', c:'bg-primary'}, 
+          {v:'M', l:'Varones', c:'bg-cyan-600'}, 
+          {v:'F', l:'Mujeres', c:'bg-pink-500'},
+          {v:'MX', l:'Mixto', c:'bg-indigo-600'}
+        ].map(t => (
+          <button key={t.v} onClick={() => setFilterGenero(t.v)} className={cn('flex-1 py-1.5 rounded-lg font-bold text-xs border bg-white text-center px-1', filterGenero === t.v ? `${t.c} text-white border-transparent` : 'text-text-muted border-surface-dark')}>{t.l}</button>
         ))}
       </div>
       {filtered.length === 0 ? <Empty text="Sin partidos" /> : (
@@ -646,11 +666,12 @@ function PartidoResumenCard({ part, act, onClick }) {
   );
 }
 
-function PartidoEditModal({ part, act, db, onClose, onUpd, onDel, Q }) {
+function PartidoEditModal({ part: initialPart, act, db, onClose, onUpd, onDel, Q }) {
+  const part = act.partidos.find(p => p.id === initialPart.id) || initialPart;
   const update = (k, v) => onUpd(part.id, k, v);
   const goles = (act.goles || []).filter(g => g.matchId === part.id);
-  const s1 = goles.filter(g => g.team === part.eq1).length;
-  const s2 = goles.filter(g => g.team === part.eq2).length;
+  const s1 = (goles || []).filter(g => g.team === part.eq1).length;
+  const s2 = (goles || []).filter(g => g.team === part.eq2).length;
 
   const addGoal = (team) => {
     const tipos = { 'Fútbol':'f', 'Handball':'h', 'Básquet':'b' };
@@ -681,8 +702,19 @@ function PartidoEditModal({ part, act, db, onClose, onUpd, onDel, Q }) {
       <div className="bg-white w-full max-w-lg rounded-t-3xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="bg-primary text-white p-4 flex justify-between items-center">
           <button onClick={onClose} className="w-9 h-9 bg-white/20 rounded flex items-center justify-center">✕</button>
-          <div className="font-black">Partido {part.deporte}</div>
-          <button onClick={() => { if(confirm('¿Borrrar?')) onDel(part.id); onClose(); }} className="w-9 h-9 bg-red-500/20 rounded flex items-center justify-center text-red-200">🗑</button>
+          <div className="flex items-center gap-2">
+            <Settings className="w-4 h-4 opacity-50" />
+            <select 
+              value={part.deporte} 
+              onChange={(e) => update('deporte', e.target.value)} 
+              className="bg-transparent text-white border-none font-black text-base cursor-pointer focus:outline-none"
+            >
+              {DEPORTES.map(d => <option key={d} value={d} className="text-black">{d}</option>)}
+            </select>
+          </div>
+          <button onClick={() => { if(confirm('¿Borrar?')) { onDel(part.id); onClose(); } }} className="w-9 h-9 bg-red-500/20 rounded flex items-center justify-center text-red-200">
+            <Trash2 className="w-5 h-5" />
+          </button>
         </div>
         <div className="p-4 bg-background">
           <div className="flex gap-1 mb-4">
@@ -782,7 +814,7 @@ function TabGoles({ act, A, Q, db }) {
 function scorerOptions(act, db) {
   return [
     <option key="none" value="">— Seleccionar —</option>,
-    ...db.participants.filter(p => act.asistentes.includes(p.id)).map(p => <option key={p.id} value={p.id}>{p.nombre} {p.apellido}</option>)
+    ...db.participants.filter(p => act.asistentes.includes(p.id) && !(act.socials || []).includes(p.id)).map(p => <option key={p.id} value={p.id}>{p.nombre} {p.apellido}</option>)
   ];
 }
 

@@ -241,6 +241,7 @@ export function newAct() {
     goles: [],
     extras: [],
     descuentos: [],
+    socials: [],
   };
 }
 

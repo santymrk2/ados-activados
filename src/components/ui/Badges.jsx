@@ -27,15 +27,20 @@ export function RankBadge({ pos }) {
 
 export function SexBadge({ sex, className = '' }) {
   const isM = sex === 'M';
+  const isF = sex === 'F';
+  const isMX = sex === 'MX';
+  
   return (
     <span
       className={cn(
         "inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-black",
-        isM ? 'bg-cyan-100 text-cyan-600' : 'bg-pink-100 text-pink-500',
+        isM ? 'bg-cyan-100 text-cyan-600' : 
+        isMX ? 'bg-indigo-100 text-indigo-600' : 
+        'bg-pink-100 text-pink-500',
         className
       )}
     >
-      {isM ? 'M' : 'F'}
+      {sex}
     </span>
   );
 }

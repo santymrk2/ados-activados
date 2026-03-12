@@ -13,7 +13,14 @@ export function actPts(pid: number, a: any, participants: any[]) {
     if (a.puntuales.includes(pid)) pts += PTS.puntualidad;
     if (a.biblias.includes(pid)) pts += PTS.biblia;
     
-    if (team) {
+    const isSocial = (a.socials || []).includes(pid);
+
+    if (isSocial) {
+      // Social mode adds 4th place points for each game
+      for (const _j of (a.juegos || [])) {
+        pts += PTS.rec[4] || 0;
+      }
+    } else if (team) {
       for (const j of (a.juegos || [])) {
         const r = j.pos?.[team] as number | undefined;
         if (r) {

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { 
   LayoutGrid, Trophy, Award, Gamepad2, ChevronLeft, 
-  List, Table2, Eye, EyeOff, Clock, BookOpen, HelpCircle
+  List, Table2, Eye, EyeOff, Clock, BookOpen, HelpCircle, Coffee
 } from 'lucide-react';
 import { TEAMS, TEAM_COLORS, getTeamBg, DEPORTES, GENEROS } from '../../lib/constants';
 import { actPts, actGoles, calcDayTeamPts } from '../../lib/calc';
@@ -243,6 +243,7 @@ export function ActivityViewModal({ db, act, onEdit, onClose }) {
                             {act.equipos?.[p.id] && (
                               <span style={{ color: TEAM_COLORS[act.equipos[p.id]] }} className="font-bold">{act.equipos[p.id]} · </span>
                             )}
+                            {(act.socials || []).includes(p.id) && <span className="text-[10px] bg-amber-100 text-amber-600 px-1 rounded font-bold">SOCIAL</span>}
                             {act.puntuales.includes(p.id) && <Clock className="w-3 h-3" />}
                             {act.biblias.includes(p.id) && <BookOpen className="w-3 h-3" />}
                           </div>

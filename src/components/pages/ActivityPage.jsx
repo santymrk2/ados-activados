@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { navigate } from 'astro:transitions/client';
 import { 
   LayoutGrid, Trophy, Award, Gamepad2, ChevronLeft, 
-  List, Table2, Eye, EyeOff, Clock, BookOpen, HelpCircle
+  List, Table2, Eye, EyeOff, Clock, BookOpen, HelpCircle, Coffee
 } from 'lucide-react';
 import { TEAMS, TEAM_COLORS, getTeamBg } from '../../lib/constants';
 import { actPts, actGoles, calcDayTeamPts } from '../../lib/calc';
@@ -263,6 +263,7 @@ export default function ActivityPage({ id }) {
                             {act.equipos?.[p.id] && (
                               <span style={{ color: TEAM_COLORS[act.equipos[p.id]] }} className="font-bold">{act.equipos[p.id]} · </span>
                             )}
+                            {(act.socials || []).includes(p.id) && <span className="text-[10px] bg-amber-100 text-amber-600 px-1 rounded font-bold">SOCIAL</span>}
                             {act.puntuales.includes(p.id) && <Clock className="w-3 h-3" />}
                             {act.biblias.includes(p.id) && <BookOpen className="w-3 h-3" />}
                           </div>
@@ -351,6 +352,7 @@ function PartidosView({ partidos }) {
           { val: 'all', label: 'Todos', activeBg: 'bg-primary' },
           { val: 'M', label: 'Varones', activeBg: 'bg-cyan-600' },
           { val: 'F', label: 'Mujeres', activeBg: 'bg-pink-500' },
+          { val: 'MX', label: 'Mixto', activeBg: 'bg-indigo-600' },
         ].map(t => (
           <button
             key={t.val}
@@ -360,7 +362,7 @@ function PartidosView({ partidos }) {
               filterGenero === t.val ? `${t.activeBg} text-white border-transparent shadow-sm` : "bg-white text-text-muted border-surface-dark"
             )}
           >
-            {t.val === 'all' ? t.label : <span className="flex items-center justify-center gap-1"><SexBadge sex={t.val} /> {t.label}</span>}
+            {t.val === 'all' ? t.label : <span className="flex items-center justify-center gap-1"><SexBadge sex={t.val} className="w-4 h-4" /> {t.label}</span>}
           </button>
         ))}
       </div>
