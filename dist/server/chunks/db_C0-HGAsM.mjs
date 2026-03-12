@@ -49,7 +49,11 @@ const partidos = sqliteTable("partidos", {
 const goles = sqliteTable("goles", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   activityId: integer("activity_id").notNull().references(() => activities.id, { onDelete: "cascade" }),
-  participantId: integer("participant_id").notNull().references(() => participants.id, { onDelete: "cascade" }),
+  participantId: integer("participant_id").references(() => participants.id, { onDelete: "cascade" }),
+  matchId: integer("match_id"),
+  // Optional link to a partido
+  team: text("team"),
+  // e.g. "E1", "E2"
   tipo: text("tipo").notNull(),
   // "f" (futbol), "h" (handball), "b" (basquet)
   cant: integer("cant").notNull().default(1)

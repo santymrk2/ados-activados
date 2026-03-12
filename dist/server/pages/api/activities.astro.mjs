@@ -1,5 +1,5 @@
-import { d as db, a as activities, b as activityParticipants, j as juegos, c as juegoPosiciones, p as partidos, g as goles, e as extras, i as invitaciones } from '../../chunks/db_bwZZVIx4.mjs';
-import { eq, inArray } from 'drizzle-orm';
+import { d as db, a as activities, b as activityParticipants, j as juegos, c as juegoPosiciones, p as partidos, g as goles, e as extras, i as invitaciones } from '../../chunks/db_C0-HGAsM.mjs';
+import { eq, inArray, and } from 'drizzle-orm';
 import { e as eventBus } from '../../chunks/eventBus_BuEbhIyL.mjs';
 export { renderers } from '../../renderers.mjs';
 
@@ -46,7 +46,14 @@ async function GET() {
           eq2: p.eq2,
           resultado: p.resultado
         })),
-        goles: gol.filter((x) => x.activityId === a.id).map((x) => ({ pid: x.participantId, tipo: x.tipo, cant: x.cant })),
+        goles: gol.filter((x) => x.activityId === a.id).map((x) => ({
+          id: x.id,
+          pid: x.participantId,
+          tipo: x.tipo,
+          cant: x.cant,
+          matchId: x.matchId,
+          team: x.team
+        })),
         extras: ext.filter((x) => x.activityId === a.id && x.tipo === "extra").map((x) => ({ pid: x.participantId, puntos: x.puntos })),
         descuentos: ext.filter((x) => x.activityId === a.id && x.tipo === "descuento").map((x) => ({ pid: x.participantId, puntos: x.puntos })),
         invitaciones: inv.filter((x) => x.activityId === a.id).map((x) => ({ invitador: x.invitadorId, invitado_id: x.invitadoId }))
@@ -107,21 +114,28 @@ async function POST({ request }) {
         }
       }
     }
+    const matchIdMap = {};
     if (data.partidos && data.partidos.length > 0) {
-      const partData = data.partidos.map((p) => ({
-        activityId: currentActId,
-        deporte: p.deporte || "Fútbol",
-        genero: p.genero || "M",
-        eq1: p.eq1,
-        eq2: p.eq2,
-        resultado: p.resultado
-      }));
-      await db.insert(partidos).values(partData);
+      for (const p of data.partidos) {
+        const pRes = await db.insert(partidos).values({
+          activityId: currentActId,
+          deporte: p.deporte || "Fútbol",
+          genero: p.genero || "M",
+          eq1: p.eq1,
+          eq2: p.eq2,
+          resultado: p.resultado
+        }).returning({ id: partidos.id });
+        if (p.id) {
+          matchIdMap[p.id] = pRes[0].id;
+        }
+      }
     }
     if (data.goles && data.goles.length > 0) {
       const gData = data.goles.map((g) => ({
         activityId: currentActId,
-        participantId: g.pid,
+        participantId: g.pid || null,
+        matchId: g.matchId ? matchIdMap[g.matchId] || null : null,
+        team: g.team || null,
         tipo: g.tipo,
         cant: g.cant
       }));
@@ -158,6 +172,161 @@ async function POST({ request }) {
     return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { "Content-Type": "application/json" } });
   }
 }
+async function PATCH({ request }) {
+  try {
+    const body = await request.json();
+    const { activityId, type, data } = body;
+    if (!activityId) throw new Error("Activity ID is required");
+    switch (type) {
+      case "attendance": {
+        const { participantId, value } = data;
+        if (value) {
+          await db.insert(activityParticipants).values({
+            activityId,
+            participantId
+          }).onConflictDoNothing();
+        } else {
+          await db.delete(activityParticipants).where(and(
+            eq(activityParticipants.activityId, activityId),
+            eq(activityParticipants.participantId, participantId)
+          ));
+        }
+        break;
+      }
+      case "puntuales": {
+        const { participantId, value } = data;
+        await db.update(activityParticipants).set({ esPuntual: value }).where(and(
+          eq(activityParticipants.activityId, activityId),
+          eq(activityParticipants.participantId, participantId)
+        ));
+        break;
+      }
+      case "biblias": {
+        const { participantId, value } = data;
+        await db.update(activityParticipants).set({ tieneBiblia: value }).where(and(
+          eq(activityParticipants.activityId, activityId),
+          eq(activityParticipants.participantId, participantId)
+        ));
+        break;
+      }
+      case "team": {
+        const { participantId, team } = data;
+        await db.update(activityParticipants).set({ equipo: team }).where(and(
+          eq(activityParticipants.activityId, activityId),
+          eq(activityParticipants.participantId, participantId)
+        ));
+        break;
+      }
+      case "goal_add": {
+        await db.insert(goles).values({
+          activityId,
+          participantId: data.pid,
+          tipo: data.tipo,
+          cant: data.cant || 1,
+          team: data.team || null,
+          matchId: data.matchId || null
+        });
+        break;
+      }
+      case "goal_remove": {
+        if (data.id) {
+          await db.delete(goles).where(eq(goles.id, data.id));
+        } else {
+          const existing = await db.select().from(goles).where(and(
+            eq(goles.activityId, activityId),
+            eq(goles.participantId, data.pid),
+            eq(goles.tipo, data.tipo)
+          )).limit(1);
+          if (existing.length > 0) {
+            await db.delete(goles).where(eq(goles.id, existing[0].id));
+          }
+        }
+        break;
+      }
+      case "goal_update": {
+        const { id, pid } = data;
+        await db.update(goles).set({ participantId: pid }).where(eq(goles.id, id));
+        break;
+      }
+      case "extra_toggle": {
+        const { participantId, tipo, puntos, value } = data;
+        if (value) {
+          await db.insert(extras).values({
+            activityId,
+            participantId,
+            tipo,
+            puntos
+          });
+        } else {
+          await db.delete(extras).where(and(
+            eq(extras.activityId, activityId),
+            eq(extras.participantId, participantId),
+            eq(extras.tipo, tipo)
+          ));
+        }
+        break;
+      }
+      case "game_add": {
+        await db.insert(juegos).values({
+          activityId,
+          nombre: data.nombre || ""
+        });
+        break;
+      }
+      case "game_delete": {
+        await db.delete(juegos).where(eq(juegos.id, data.id));
+        break;
+      }
+      case "game_pos": {
+        const { juegoId, pos } = data;
+        await db.delete(juegoPosiciones).where(eq(juegoPosiciones.juegoId, juegoId));
+        if (pos && Object.keys(pos).length > 0) {
+          const jpData = Object.entries(pos).map(([eqName, p]) => ({
+            juegoId,
+            equipo: eqName,
+            posicion: p
+          }));
+          await db.insert(juegoPosiciones).values(jpData);
+        }
+        break;
+      }
+      case "partido_add": {
+        await db.insert(partidos).values({
+          activityId,
+          deporte: data.deporte,
+          genero: data.genero,
+          eq1: data.eq1,
+          eq2: data.eq2,
+          resultado: data.resultado
+        });
+        break;
+      }
+      case "partido_update": {
+        await db.update(partidos).set({
+          resultado: data.resultado,
+          eq1: data.eq1,
+          eq2: data.eq2,
+          deporte: data.deporte,
+          genero: data.genero
+        }).where(eq(partidos.id, data.id));
+        break;
+      }
+      case "partido_delete": {
+        await db.delete(partidos).where(eq(partidos.id, data.id));
+        break;
+      }
+      default:
+        throw new Error("Invalid update type");
+    }
+    eventBus.emit("data-changed");
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { "Content-Type": "application/json" } });
+  }
+}
 async function DELETE({ request }) {
   try {
     const body = await request.json();
@@ -177,6 +346,7 @@ const _page = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
   __proto__: null,
   DELETE,
   GET,
+  PATCH,
   POST
 }, Symbol.toStringTag, { value: 'Module' }));
 
