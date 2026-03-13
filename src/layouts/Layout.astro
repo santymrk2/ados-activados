@@ -1,7 +1,6 @@
 ---
 import { ClientRouter } from "astro:transitions";
 import { AuthGate } from "../components/auth/AuthGate";
-import { BottomNav } from "../components/ui/BottomNav";
 import "../styles/global.css";
 
 interface Props {
@@ -32,9 +31,8 @@ const { showNav = true } = Astro.props;
     <ClientRouter />
   </head>
   <body class="pb-[env(safe-area-inset-bottom)]">
-    <AuthGate client:only="react">
+    <AuthGate client:only="react" showNav={showNav}>
       <slot />
     </AuthGate>
-    {showNav && <BottomNav client:only="react" transition:persist />}
   </body>
 </html>

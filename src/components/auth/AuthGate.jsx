@@ -3,8 +3,9 @@ import { Toaster } from 'sonner';
 import { useApp } from '../../hooks/useApp';
 import { LoginScreen } from '../auth/LoginScreen';
 import { Loader } from '../auth/Loader';
+import { BottomNav } from '../ui/BottomNav';
 
-export function AuthGate({ children }) {
+export function AuthGate({ children, showNav = true }) {
   const { isAuthenticated, isLoading, login } = useApp();
   const [loginError, setLoginError] = useState(false);
   const [showPass, setShowPass] = useState(false);
@@ -38,6 +39,7 @@ export function AuthGate({ children }) {
     <div className="min-h-screen bg-background text-dark font-clash pb-20">
       <Toaster richColors position="top-center" />
       {children}
+      {showNav && <BottomNav />}
     </div>
   );
 }
