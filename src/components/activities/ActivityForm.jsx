@@ -2,13 +2,15 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Toaster, toast } from 'sonner';
 import {
   FileText, Users, LayoutGrid, Gamepad2, Award, Mail, Plus, Trophy,
-  ChevronLeft, ChevronRight, Clock, BookOpen, Search, ArrowUpDown, X, List, Table2, Coffee, Zap, Trash2, Settings
+  ChevronLeft, ChevronRight, Clock, BookOpen, Search, ArrowUpDown, X, List, Table2, Coffee, Zap, Trash2, Settings,
+  Volleyball
 } from 'lucide-react';
 import { newAct, newPart, TEAMS, getEdad, TEAM_COLORS, getTeamBg, PTS, DEPORTES, GENEROS } from '../../lib/constants';
 import { Modal, Label, Empty, SegmentedButtons, PillCheck } from '../ui/Common';
 import { SexBadge, Chip } from '../ui/Badges';
 import { Avatar } from '../ui/Avatar';
 import { HelpInfo } from '../ui/HelpInfo';
+import { TeamTable } from '../ui/TeamTable';
 import { cn, formatDate } from '../../lib/utils';
 
 export function ActivityFormModal({ db, initial, onClose, onSave, onQuickUpdate, onSaveParticipant }) {
@@ -22,10 +24,11 @@ export function ActivityFormModal({ db, initial, onClose, onSave, onQuickUpdate,
 
   const A = (k, v) => setAct((a) => ({ ...a, [k]: v }));
 
-  const Q = (type, data, k, v) => {
+  const Q = async (type, data, k, v) => {
     setAct((a) => ({ ...a, [k]: v }));
     if (act.id) {
-      onQuickUpdate(act.id, type, data);
+      const result = await onQuickUpdate(act.id, type, data);
+      return result;
     }
   };
 
@@ -34,7 +37,7 @@ export function ActivityFormModal({ db, initial, onClose, onSave, onQuickUpdate,
     { icon: Users, label: 'Asistencia', key: 'asistencia' },
     { icon: LayoutGrid, label: 'Equipos', key: 'equipos' },
     { icon: Gamepad2, label: 'Juegos', key: 'juegos' },
-    { icon: Award, label: 'Deportes', key: 'deportes' },
+    { icon: Volleyball, label: 'Deportes', key: 'deportes' },
     { icon: Mail, label: 'Invitados', key: 'invitados' },
     { icon: Trophy, label: 'Goles', key: 'goles' },
     { icon: Plus, label: 'Extras', key: 'extras' },
@@ -429,69 +432,8 @@ function TabEquipos({ act, A, Q, db }) {
           })}
         </div>
       ) : (
-        <TeamTableView act={act} db={db} />
+        <TeamTable act={act} participants={db.participants} onTeamChange={(pid, team) => setTeam(pid, team)} readOnly={false} />
       )}
-    </div>
-  );
-}
-
-function TeamTableView({ act, db }) {
-  const present = useMemo(() =>
-    db.participants.filter(p => act.asistentes.includes(p.id)).sort((a, b) => `${a.apellido} ${a.nombre}`.localeCompare(`${b.apellido} ${b.nombre}`))
-    , [db.participants, act.asistentes]);
-
-  const tableData = useMemo(() => {
-    return TEAMS.map(team => {
-      const members = present.filter(p => act.equipos?.[p.id] === team);
-      return {
-        team,
-        women: members.filter(p => p.sexo === 'F'),
-        men: members.filter(p => p.sexo === 'M'),
-      };
-    });
-  }, [present, act.equipos]);
-
-  return (
-    <div className="overflow-x-auto rounded-xl border border-surface-dark">
-      <table className="w-full border-collapse text-[10px]">
-        <thead>
-          <tr>
-            {tableData.map(({ team }) => (
-              <th key={team} className="p-2 border-b border-surface-dark font-black" style={{ backgroundColor: getTeamBg(team), color: TEAM_COLORS[team] }}>{team}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            {tableData.map(({ team, women }) => (
-              <td key={team} className="p-1 text-center bg-pink-50/30 font-bold border-r border-surface-dark last:border-0">Mujeres ({women.length})</td>
-            ))}
-          </tr>
-          {Array.from({ length: Math.max(...tableData.map(c => c.women.length), 0) }).map((_, r) => (
-            <tr key={`w-${r}`}>
-              {tableData.map(({ team, women }) => (
-                <td key={team} className="p-1 border-r border-surface-dark last:border-0 truncate bg-pink-50/10 max-w-[80px]">
-                  {women[r] ? `${women[r].nombre} ${women[r].apellido[0]}.` : ''}
-                </td>
-              ))}
-            </tr>
-          ))}
-          <tr>
-            {tableData.map(({ team, men }) => (
-              <td key={team} className="p-1 text-center bg-cyan-50/30 font-bold border-r border-surface-dark last:border-0 border-t border-surface-dark">Varones ({men.length})</td>
-            ))}
-          </tr>
-          {Array.from({ length: Math.max(...tableData.map(c => c.men.length), 0) }).map((_, r) => (
-            <tr key={`m-${r}`}>
-              {tableData.map(({ team, men }) => (
-                <td key={team} className="p-1 border-r border-surface-dark last:border-0 truncate bg-cyan-50/10 max-w-[80px]">
-                  {men[r] ? `${men[r].nombre} ${men[r].apellido[0]}.` : ''}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   );
 }
@@ -676,11 +618,18 @@ function PartidoEditModal({ part: initialPart, act, db, onClose, onUpd, onDel, Q
   const s1 = (goles || []).filter(g => g.team === part.eq1).length;
   const s2 = (goles || []).filter(g => g.team === part.eq2).length;
 
-  const addGoal = (team) => {
+  const addGoal = async (team) => {
     const tipos = { 'Fútbol': 'f', 'Handball': 'h', 'Básquet': 'b' };
-    const ng = { id: Date.now(), pid: null, tipo: tipos[part.deporte] || 'f', matchId: part.id, team, cant: 1 };
+    const tempId = Date.now();
+    const ng = { id: tempId, pid: null, tipo: tipos[part.deporte] || 'f', matchId: part.id, team, cant: 1 };
     const all = [...(act.goles || []), ng];
-    Q('goal_add', ng, 'goles', all);
+    const result = await Q('goal_add', ng, 'goles', all);
+
+    // Actualizar con el ID real devuelto por el servidor
+    if (result?.id) {
+      const updatedGoles = all.map(g => g.id === tempId ? { ...g, id: result.id } : g);
+      setAct(a => ({ ...a, goles: updatedGoles }));
+    }
 
     // Auto result
     const ns1 = all.filter(g => g.matchId === part.id && g.team === part.eq1).length;

@@ -2,14 +2,14 @@
 
 @theme {
   --color-primary: #4342FF;
-  --color-accent: #CCFF3E;
+  --color-accent: #c9fc00;
   --color-background: #EFEFEF;
   --color-surface: #FFFFFF;
   --color-surface-dark: #E5E5E5;
   --color-dark: #1A1A1A;
   --color-text: #1A1A1A;
   --color-text-muted: #666666;
-  
+
   --font-clash: 'ClashGrotesk', sans-serif;
 }
 
@@ -107,6 +107,7 @@ select.input {
 .scroll-hide::-webkit-scrollbar {
   display: none;
 }
+
 .scroll-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -115,6 +116,7 @@ select.input {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -151,6 +153,7 @@ select.input {
   from {
     transform: translateY(100%);
   }
+
   to {
     transform: translateY(0);
   }

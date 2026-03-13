@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import { navigate } from 'astro:transitions/client';
 import {
   LayoutGrid, Trophy, Award, Gamepad2, ChevronLeft,
-  List, Table2, Eye, EyeOff, Clock, BookOpen, HelpCircle, Coffee
+  List, Table2, Eye, EyeOff, Clock, BookOpen, HelpCircle, Coffee,
+  Volleyball
 } from 'lucide-react';
 import { TEAMS, TEAM_COLORS, getTeamBg } from '../../lib/constants';
 import { actPts, actGoles, calcDayTeamPts } from '../../lib/calc';
@@ -10,6 +11,7 @@ import { Empty, Section } from '../ui/Common';
 import { Avatar } from '../ui/Avatar';
 import { SexBadge, RankBadge } from '../ui/Badges';
 import { HelpInfo } from '../ui/HelpInfo';
+import { TeamTable } from '../ui/TeamTable';
 import { cn, formatDate } from '../../lib/utils';
 import { useApp } from '../../hooks/useApp';
 import { DEPORTES, GENEROS } from '../../lib/constants';
@@ -66,7 +68,8 @@ export default function ActivityPage({ id }) {
     { icon: LayoutGrid, label: 'Equipos' },
     { icon: Trophy, label: 'Ranking' },
     { icon: Award, label: 'Goleadores' },
-    { icon: Gamepad2, label: 'Partidos' },
+    { icon: Gamepad2, label: 'Juegos' },
+    { icon: Volleyball, label: 'Deportes' },
   ];
 
   const scorersByDeporte = useMemo(() => {
@@ -149,42 +152,11 @@ export default function ActivityPage({ id }) {
                     </div>
                   ))}
                 </div>
-                {(act.juegos || []).length > 0 && (
-                  <>
-                    <div className="font-bold text-sm text-text-muted mb-3 flex items-center gap-2">
-                      <Gamepad2 className="w-4 h-4" /> Juegos Mixtos
-                    </div>
-                    {(act.juegos || []).map((j, gi) => {
-                      const sorted = TEAMS.map((t) => ({ t, pos: j.pos?.[t] || 99 })).filter((x) => x.pos !== 99).sort((a, b) => a.pos - b.pos);
-                      return (
-                        <div key={j.id} className="bg-white rounded-xl border border-surface-dark mb-3 overflow-hidden">
-                          <div className="p-3 border-b border-surface-dark font-bold">
-                            {j.nombre || `Juego ${gi + 1}`}
-                          </div>
-                          <div className="flex">
-                            {sorted.map(({ t, pos }) => (
-                              <div
-                                key={t}
-                                className={cn('flex-1 p-3 text-center', pos === 1 ? 'bg-surface-dark' : '')}
-                              >
-                                <RankBadge pos={pos} />
-                                <div className="font-black mt-1" style={{ color: TEAM_COLORS[t] }}>
-                                  {t}
-                                </div>
-                                <div className="text-xs text-text-muted">+{PTS.rec[pos]}</div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </>
-                )}
               </>
             )}
 
             {teamViewMode === 'table' && (
-              <TeamTableViewReadOnly act={act} participants={participants} />
+              <TeamTable act={act} participants={participants || []} readOnly={true} />
             )}
           </div>
         )}
@@ -262,6 +234,10 @@ export default function ActivityPage({ id }) {
           </div>
         )}
 
+        {tab === 3 && (
+          <JuegosMixtosView juegos={act.juegos || []} />
+        )}
+
         {tab === 2 && (
           <div>
             <div className="flex justify-between items-center mb-4">
@@ -312,7 +288,7 @@ export default function ActivityPage({ id }) {
           </div>
         )}
 
-        {tab === 3 && (
+        {tab === 4 && (
           <PartidosView partidos={act.partidos || []} />
         )}
       </div>
@@ -331,6 +307,44 @@ export default function ActivityPage({ id }) {
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+function JuegosMixtosView({ juegos }) {
+  if ((juegos || []).length === 0) {
+    return <Empty text="Sin juegos registrados" />;
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="font-bold text-sm text-text-muted mb-2 flex items-center gap-2">
+        <Gamepad2 className="w-4 h-4" /> Juegos Mixtos
+      </div>
+      {juegos.map((j, gi) => {
+        const sorted = TEAMS.map((t) => ({ t, pos: j.pos?.[t] || 99 })).filter((x) => x.pos !== 99).sort((a, b) => a.pos - b.pos);
+        return (
+          <div key={j.id} className="bg-white rounded-xl border border-surface-dark overflow-hidden">
+            <div className="p-3 border-b border-surface-dark font-bold">
+              {j.nombre || `Juego ${gi + 1}`}
+            </div>
+            <div className="flex">
+              {sorted.map(({ t, pos }) => (
+                <div
+                  key={t}
+                  className={cn('flex-1 p-3 text-center', pos === 1 ? 'bg-surface-dark' : '')}
+                >
+                  <RankBadge pos={pos} />
+                  <div className="font-black mt-1" style={{ color: TEAM_COLORS[t] }}>
+                    {t}
+                  </div>
+                  <div className="text-xs text-text-muted">+{PTS.rec[pos]}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

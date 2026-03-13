@@ -37,8 +37,9 @@ export function useDatabase() {
   }, []);
 
   const quickUpdate = useCallback(async (activityId, type, data) => {
-    await quickUpdateActivity(activityId, type, data);
+    const result = await quickUpdateActivity(activityId, type, data);
     await refreshData();
+    return result;
   }, []);
 
   const saveParticipant = useCallback(async (participant, isNew, invitadorId = null) => {
