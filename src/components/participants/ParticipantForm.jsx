@@ -4,6 +4,7 @@ import { Plus, X } from 'lucide-react';
 import { newPart, getEdad } from '../../lib/constants';
 import { Modal, Label, SegmentedButtons } from '../ui/Common';
 import { SexBadge } from '../ui/Badges';
+import { confirmDialog } from '../../lib/confirm';
 
 export function ParticipantFormModal({ db, initial, onClose, onSave }) {
   const [form, setForm] = useState({ ...newPart(), ...initial });
@@ -39,7 +40,7 @@ export function ParticipantFormModal({ db, initial, onClose, onSave }) {
     const age = getEdad(form.fechaNacimiento);
     if (age < 0 || age > 100) return toast.error('La fecha de nacimiento no es válida');
     if (age < 12 || age > 18) {
-      if (!confirm(`¿Estás seguro que querés agregar a ${form.nombre} con una edad de ${age} años?`)) {
+      if (!(await confirmDialog(`¿Estás seguro que querés agregar a ${form.nombre} con una edad de ${age} años?`))) {
         return;
       }
     }

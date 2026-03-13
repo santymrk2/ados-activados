@@ -5,6 +5,7 @@ import { calcPts } from '../../lib/calc';
 import { PageHeader, Empty } from '../ui/Common';
 import { Avatar } from '../ui/Avatar';
 import { formatDate } from '../../lib/utils';
+import { confirmDialog } from '../../lib/confirm';
 
 export function ParticipantsList({ db, onNew, onEdit, onDelete, onViewDetail }) {
   const [search, setSearch] = useState('');
@@ -37,8 +38,8 @@ export function ParticipantsList({ db, onNew, onEdit, onDelete, onViewDetail }) 
     return result;
   }, [db.participants, db.activities, search, sortBy, sortOrder, filterSex]);
 
-  const del = (id) => {
-    if (confirm('¿Eliminar?')) {
+  const del = async (id) => {
+    if (await confirmDialog('¿Eliminar este jugador?')) {
       onDelete(id);
     }
   };

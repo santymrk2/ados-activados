@@ -5,13 +5,14 @@ import { calcPts } from '../../lib/calc';
 import { PageHeader, Empty } from '../ui/Common';
 import { Chip } from '../ui/Badges';
 import { formatDate } from '../../lib/utils';
+import { confirmDialog } from '../../lib/confirm';
 
 export function ActivitiesList({ db, onView, onNew, onEdit, onDelete }) {
   const sorted = useMemo(() => [...db.activities].sort((a, b) => b.fecha.localeCompare(a.fecha)), [db.activities]);
   
-  const del = (id, e) => {
+  const del = async (id, e) => {
     e.stopPropagation();
-    if (confirm('¿Eliminar?')) {
+    if (await confirmDialog('¿Eliminar esta actividad?')) {
       onDelete(id);
     }
   };

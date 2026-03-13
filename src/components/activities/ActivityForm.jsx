@@ -12,6 +12,7 @@ import { Avatar } from '../ui/Avatar';
 import { HelpInfo } from '../ui/HelpInfo';
 import { TeamTable } from '../ui/TeamTable';
 import { cn, formatDate } from '../../lib/utils';
+import { confirmDialog } from '../../lib/confirm';
 
 export function ActivityFormModal({ db, initial, onClose, onSave, onQuickUpdate, onSaveParticipant }) {
   const [act, setAct] = useState({ ...newAct(), ...initial });
@@ -220,7 +221,7 @@ function TabAsistencia({ act, A, Q, db, onSaveParticipant }) {
     const age = getEdad(newPlayer.fechaNacimiento);
     if (age < 0 || age > 100) return toast.error('La fecha de nacimiento no es válida');
     if (age < 12 || age > 18) {
-      if (!confirm(`¿Estás seguro que querés agregar a ${newPlayer.nombre} con ${age} años?`)) return;
+      if (!(await confirmDialog(`¿Estás seguro que querés agregar a ${newPlayer.nombre} con ${age} años?`))) return;
     }
 
     if (isSubmittingPlayer) return;
@@ -664,7 +665,7 @@ function PartidoEditModal({ part: initialPart, act, db, onClose, onUpd, onDel, Q
               {DEPORTES.map(d => <option key={d} value={d} className="text-black">{d}</option>)}
             </select>
           </div>
-          <button onClick={() => { if (confirm('¿Borrar?')) { onDel(part.id); onClose(); } }} className="w-9 h-9 bg-red-500/20 rounded flex items-center justify-center text-red-200">
+          <button onClick={async () => { if (await confirmDialog('¿Borrar este partido?')) { onDel(part.id); onClose(); } }} className="w-9 h-9 bg-red-500/20 rounded flex items-center justify-center text-red-200">
             <Trash2 className="w-5 h-5" />
           </button>
         </div>

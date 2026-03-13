@@ -7,14 +7,18 @@ import { PageHeader, Empty } from '../ui/Common';
 import { Avatar } from '../ui/Avatar';
 import { formatDate } from '../../lib/utils';
 import { useApp } from '../../hooks/useApp';
+import { usePolling } from '../../hooks/usePolling';
+import { confirmDialog } from '../../lib/confirm';
 
 export default function ParticipantsPage() {
-  const { db, saveParticipant, deleteParticipant } = useApp();
+  const { db, saveParticipant, deleteParticipant, refresh } = useApp();
   const { participants, activities } = db;
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('total');
   const [sortOrder, setSortOrder] = useState('desc');
   const [filterSex, setFilterSex] = useState('all');
+
+  usePolling(refresh, 5000);
 
   const list = useMemo(() => {
     let result = (participants || []).map((p) => ({ ...p, ...calcPts(p.id, activities || [], participants || []) }));
@@ -41,8 +45,8 @@ export default function ParticipantsPage() {
     return result;
   }, [participants, activities, search, sortBy, sortOrder, filterSex]);
 
-  const del = (id) => {
-    if (confirm('¿Eliminar?')) {
+  const del = async (id) => {
+    if (await confirmDialog('¿Eliminar este jugador?')) {
       deleteParticipant(id);
     }
   };

@@ -8,6 +8,7 @@ import { Avatar } from '../ui/Avatar';
 import { SexBadge, RankBadge } from '../ui/Badges';
 import { cn, formatDate } from '../../lib/utils';
 import { useApp } from '../../hooks/useApp';
+import { usePolling } from '../../hooks/usePolling';
 import { SettingsPanel } from '../auth/SettingsPanel';
 
 function RankRow({ p, pos, activities, showPts }) {
@@ -50,11 +51,13 @@ const PODIUM_COLORS = [
 ];
 
 export default function DashboardPage() {
-  const { db, showSettings, setShowSettings } = useApp();
+  const { db, showSettings, setShowSettings, refresh } = useApp();
   const { participants, activities } = db;
   const [showRanking, setShowRanking] = useState(false);
   const [showTopGoleadores, setShowTopGoleadores] = useState(false);
   const [topGoleadoresGender, setTopGoleadoresGender] = useState('M');
+
+  usePolling(refresh, 5000);
 
   const rankings = useMemo(() => {
     return (participants || []).map(p => {

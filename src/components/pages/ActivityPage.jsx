@@ -14,6 +14,7 @@ import { HelpInfo } from '../ui/HelpInfo';
 import { TeamTable } from '../ui/TeamTable';
 import { cn, formatDate } from '../../lib/utils';
 import { useApp } from '../../hooks/useApp';
+import { usePolling } from '../../hooks/usePolling';
 import { DEPORTES, GENEROS } from '../../lib/constants';
 
 const PODIUM_COLORS = [
@@ -25,10 +26,12 @@ const PODIUM_COLORS = [
 const PTS = { rec: { 1: 10, 2: 7, 3: 4, 4: 2 } };
 
 export default function ActivityPage({ id }) {
-  const { db } = useApp();
+  const { db, refresh } = useApp();
   const { activities, participants } = db;
 
   const act = useMemo(() => activities.find(a => a.id === Number(id)), [activities, id]);
+
+  usePolling(refresh, 5000);
 
   if (!act) {
     return (

@@ -8,18 +8,22 @@ import { Avatar } from '../ui/Avatar';
 import { Chip } from '../ui/Badges';
 import { formatDate, isToday } from '../../lib/utils';
 import { useApp } from '../../hooks/useApp';
+import { usePolling } from '../../hooks/usePolling';
 import { NewActivityModal } from '../activities/NewActivityModal';
+import { confirmDialog } from '../../lib/confirm';
 
 export default function ActivitiesPage() {
-  const { db, deleteActivity } = useApp();
+  const { db, deleteActivity, refresh } = useApp();
   const { activities } = db;
   const [showNewModal, setShowNewModal] = useState(false);
 
+  usePolling(refresh, 5000);
+
   const sorted = useMemo(() => [...(activities || [])].sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '')), [activities]);
 
-  const del = (id, e) => {
+  const del = async (id, e) => {
     e.stopPropagation();
-    if (confirm('¿Eliminar?')) {
+    if (await confirmDialog('¿Eliminar esta actividad?')) {
       deleteActivity(id);
     }
   };
