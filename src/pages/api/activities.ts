@@ -33,6 +33,7 @@ export async function GET() {
         id: a.id,
         fecha: a.fecha,
         titulo: a.titulo || '',
+        cantEquipos: a.cantEquipos || 4,
         asistentes: actAp.map(x => x.participantId),
         puntuales: actAp.filter(x => x.esPuntual).map(x => x.participantId),
         biblias: actAp.filter(x => x.tieneBiblia).map(x => x.participantId),
@@ -49,8 +50,8 @@ export async function GET() {
           matchId: x.matchId,
           team: x.team
         })),
-        extras: ext.filter(x => x.activityId === a.id && x.tipo === 'extra').map(x => ({ pid: x.participantId, puntos: x.puntos })),
-        descuentos: ext.filter(x => x.activityId === a.id && x.tipo === 'descuento').map(x => ({ pid: x.participantId, puntos: x.puntos })),
+        extras: ext.filter(x => x.activityId === a.id && x.tipo === 'extra').map(x => ({ id: x.id, pid: x.participantId, team: x.team, puntos: x.puntos, motivo: x.motivo })),
+        descuentos: ext.filter(x => x.activityId === a.id && x.tipo === 'descuento').map(x => ({ id: x.id, pid: x.participantId, team: x.team, puntos: x.puntos, motivo: x.motivo })),
         invitaciones: inv.filter(x => x.activityId === a.id).map(x => ({ invitador: x.invitadorId, invitado_id: x.invitadoId })),
       };
     });
@@ -72,12 +73,14 @@ export async function POST({ request }: { request: Request }) {
       const result = await db.insert(schema.activities).values({
         fecha: data.fecha,
         titulo: data.titulo || '',
+        cantEquipos: data.cantEquipos || 4,
       }).returning({ id: schema.activities.id });
       currentActId = result[0].id;
     } else {
       await db.update(schema.activities).set({
         fecha: data.fecha,
         titulo: data.titulo || '',
+        cantEquipos: data.cantEquipos || 4,
       }).where(eq(schema.activities.id, currentActId));
 
       // Limpiar todo lo anterior
@@ -158,12 +161,12 @@ export async function POST({ request }: { request: Request }) {
     const extrasData: any[] = [];
     if (data.extras && data.extras.length > 0) {
       data.extras.forEach((e: any) => {
-        extrasData.push({ activityId: currentActId, participantId: e.pid, tipo: 'extra', puntos: e.puntos });
+        extrasData.push({ activityId: currentActId, participantId: e.pid || null, team: e.team || null, tipo: 'extra', puntos: e.puntos, motivo: e.motivo || '' });
       });
     }
     if (data.descuentos && data.descuentos.length > 0) {
       data.descuentos.forEach((e: any) => {
-        extrasData.push({ activityId: currentActId, participantId: e.pid, tipo: 'descuento', puntos: e.puntos });
+        extrasData.push({ activityId: currentActId, participantId: e.pid || null, team: e.team || null, tipo: 'descuento', puntos: e.puntos, motivo: e.motivo || '' });
       });
     }
     if (extrasData.length > 0) {
@@ -199,6 +202,13 @@ export async function PATCH({ request }: { request: Request }) {
     if (!activityId) throw new Error('Activity ID is required');
 
     switch (type) {
+      case 'config': {
+        const { k, v } = data;
+        await db.update(schema.activities)
+          .set({ [k]: v })
+          .where(eq(schema.activities.id, activityId));
+        break;
+      }
       case 'attendance': {
         const { participantId, value } = data;
         if (value) {

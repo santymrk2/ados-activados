@@ -1,24 +1,30 @@
-export const TEAMS = ["E1", "E2", "E3", "E4"];
+export const TEAMS = ["E1", "E2", "E3", "E4", "E5", "E6"];
 
-const DEFAULT_TEAM_COLORS = {
+const DEFAULT_TEAM_COLORS: Record<string, string> = {
   E1: "#FF6B6B",
   E2: "#4ECDC4", 
   E3: "#FFD93D",
-  E4: "#A78BFA"
+  E4: "#A78BFA",
+  E5: "#FB923C",
+  E6: "#2DD4BF"
 };
 
-const DEFAULT_TEAM_BG_LIGHT = {
+const DEFAULT_TEAM_BG_LIGHT: Record<string, string> = {
   E1: "#FFECEC",
   E2: "#E8F5F3", 
   E3: "#FFF8E1",
-  E4: "#F3EEFC"
+  E4: "#F3EEFC",
+  E5: "#FFF1E6",
+  E6: "#E2FBF9"
 };
 
-const DEFAULT_TEAM_BG = {
+const DEFAULT_TEAM_BG: Record<string, string> = {
   E1: "#2A1010",
   E2: "#0A2220",
   E3: "#2A2200",
-  E4: "#1A1230"
+  E4: "#1A1230",
+  E5: "#2E1B0A",
+  E6: "#0A2A26"
 };
 
 function getStoredTeamColors() {
@@ -157,11 +163,11 @@ export const PTS = {
   biblia: 2,
   invito: 5,
   invitado: 3,
-  rec: { 1: 10, 2: 7, 3: 4, 4: 2 },
+  rec: { 1: 10, 2: 7, 3: 4, 4: 2, 5: 1, 6: 0 },
   dep: { gano: 4, empato: 2, perdio: 1 },
 };
 
-function calcularEdad(fechaNacimiento) {
+function calcularEdad(fechaNacimiento: string) {
   if (!fechaNacimiento) return null;
   const hoy = new Date();
   const nacimiento = new Date(fechaNacimiento);
@@ -173,11 +179,11 @@ function calcularEdad(fechaNacimiento) {
   return edad;
 }
 
-export function getEdad(fechaNacimiento) {
+export function getEdad(fechaNacimiento: string) {
   return calcularEdad(fechaNacimiento);
 }
 
-function generarFechaNacimiento(edad) {
+function generarFechaNacimiento(edad: string) {
   if (!edad) return "";
   const hoy = new Date();
   const año = hoy.getFullYear() - parseInt(edad);
@@ -186,7 +192,7 @@ function generarFechaNacimiento(edad) {
   return `${año}-${mes}-${día}`;
 }
 
-function generarEdadAPartirDeFecha(fecha) {
+function generarEdadAPartirDeFecha(fecha: string) {
   if (!fecha) return "";
   const edad = calcularEdad(fecha);
   return edad !== null ? String(edad) : "";
@@ -230,6 +236,7 @@ export function newAct() {
     id: null,
     fecha: new Date().toISOString().slice(0, 10),
     titulo: "",
+    cantEquipos: 4,
     equipos: {},
     asistentes: [],
     puntuales: [],

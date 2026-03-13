@@ -44,8 +44,13 @@ export function actPts(pid: number, a: any, participants: any[]) {
   }
   
   if ((a.invitaciones || []).some((i: any) => i.invitado_id === pid)) pts += PTS.invitado;
-  for (const e of (a.extras || [])) if (e.pid === pid) pts += (e.puntos as number);
-  for (const d of (a.descuentos || [])) if (d.pid === pid) pts -= (d.puntos as number);
+  
+  for (const e of (a.extras || [])) {
+    if (e.pid === pid || (team && e.team === team)) pts += (e.puntos as number);
+  }
+  for (const d of (a.descuentos || [])) {
+    if (d.pid === pid || (team && d.team === team)) pts -= (d.puntos as number);
+  }
   
   return pts;
 }
@@ -73,11 +78,12 @@ export function calcPts(pid: number, activities: any[], participants: any[]) {
 }
 
 export function calcDayTeamPts(a: any, participants: any[]) {
-  const acc = { E1: 0, E2: 0, E3: 0, E4: 0 };
+  const acc: Record<string, number> = {};
+  TEAMS.forEach(t => acc[t] = 0);
   for (const [pidStr, team] of Object.entries(a.equipos || {})) {
     const pid = Number(pidStr);
     if (!a.asistentes.includes(pid)) continue;
-    const t = team as keyof typeof acc;
+    const t = team as string;
     if (acc[t] !== undefined) {
       acc[t] = (acc[t] || 0) + actPts(pid, a, participants);
     }

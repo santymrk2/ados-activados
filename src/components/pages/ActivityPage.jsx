@@ -5,7 +5,7 @@ import {
   List, Table2, Eye, EyeOff, Clock, BookOpen, HelpCircle, Coffee,
   Volleyball
 } from 'lucide-react';
-import { TEAMS, TEAM_COLORS, getTeamBg } from '../../lib/constants';
+import { TEAMS, TEAM_COLORS, getTeamBg, PTS } from '../../lib/constants';
 import { actPts, actGoles, calcDayTeamPts } from '../../lib/calc';
 import { Empty, Section } from '../ui/Common';
 import { Avatar } from '../ui/Avatar';
@@ -23,7 +23,7 @@ const PODIUM_COLORS = [
   { bg: '#B45309', text: '#fff', shadow: '#B4530944' },
 ];
 
-const PTS = { rec: { 1: 10, 2: 7, 3: 4, 4: 2 } };
+
 
 export default function ActivityPage({ id }) {
   const { db, refresh } = useApp();
@@ -46,8 +46,9 @@ export default function ActivityPage({ id }) {
     );
   }
 
+  const activeTeams = useMemo(() => TEAMS.slice(0, act.cantEquipos || 4), [act.cantEquipos]);
   const dayPts = useMemo(() => calcDayTeamPts(act, participants || []), [act, participants]);
-  const teamRank = TEAMS.map((t) => ({ team: t, pts: dayPts[t] || 0 })).sort((a, b) => b.pts - a.pts);
+  const teamRank = activeTeams.map((t) => ({ team: t, pts: dayPts[t] || 0 })).sort((a, b) => b.pts - a.pts);
   const maxTeamPts = Math.max(...teamRank.map((t) => t.pts), 1);
 
   const playerRank = useMemo(
@@ -325,7 +326,9 @@ function JuegosMixtosView({ juegos }) {
         <Gamepad2 className="w-4 h-4" /> Juegos Mixtos
       </div>
       {juegos.map((j, gi) => {
-        const sorted = TEAMS.map((t) => ({ t, pos: j.pos?.[t] || 99 })).filter((x) => x.pos !== 99).sort((a, b) => a.pos - b.pos);
+        const activeTeams = TEAMS.slice(0, act.cantEquipos || 4);
+        const sorted = activeTeams.map((t) => ({ t, pos: j.pos?.[t] || 99 })).filter((x) => x.pos !== 99).sort((a, b) => a.pos - b.pos);
+        const medals = ['', '🥇', '🥈', '🥉', '4°', '5°', '6°'];
         return (
           <div key={j.id} className="bg-white rounded-xl border border-surface-dark overflow-hidden">
             <div className="p-3 border-b border-surface-dark font-bold">
@@ -337,11 +340,11 @@ function JuegosMixtosView({ juegos }) {
                   key={t}
                   className={cn('flex-1 p-3 text-center', pos === 1 ? 'bg-surface-dark' : '')}
                 >
-                  <RankBadge pos={pos} />
+                  <div className="text-xl mb-1">{medals[pos]}</div>
                   <div className="font-black mt-1" style={{ color: TEAM_COLORS[t] }}>
                     {t}
                   </div>
-                  <div className="text-xs text-text-muted">+{PTS.rec[pos]}</div>
+                  <div className="text-xs text-text-muted">+{PTS.rec[pos] || 0}</div>
                 </div>
               ))}
             </div>
@@ -449,8 +452,10 @@ function TeamTableViewReadOnly({ act, participants }) {
     .filter((p) => act.asistentes.includes(p.id))
     .sort((a, b) => `${a.apellido} ${a.nombre}`.localeCompare(`${b.apellido} ${b.nombre}`));
 
+  const activeTeams = useMemo(() => TEAMS.slice(0, act.cantEquipos || 4), [act.cantEquipos]);
+
   const tableData = useMemo(() => {
-    return TEAMS.map((team) => {
+    return activeTeams.map((team) => {
       const members = present.filter((p) => act.equipos?.[p.id] === team);
       return {
         team,
@@ -472,7 +477,7 @@ function TeamTableViewReadOnly({ act, participants }) {
         </div>
       )}
       <div className="overflow-x-auto rounded-xl border border-surface-dark">
-        <table className="w-full border-collapse text-sm" style={{ minWidth: TEAMS.length * 110 }}>
+        <table className="w-full border-collapse text-sm" style={{ minWidth: activeTeams.length * 110 }}>
           <thead>
             <tr>
               {tableData.map(({ team }) => (

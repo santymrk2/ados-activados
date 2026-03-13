@@ -105,7 +105,7 @@ export function ActivityFormModal({ db, initial, onClose, onSave, onQuickUpdate,
         </div>
       </div>
       <div className="p-4 flex-1">
-        {tab === 0 && <TabInfo act={act} A={A} />}
+        {tab === 0 && <TabInfo act={act} A={A} Q={Q} />}
         {tab === 1 && <TabAsistencia act={act} A={A} Q={Q} db={db} onSaveParticipant={onSaveParticipant} />}
         {tab === 2 && <TabEquipos act={act} A={A} Q={Q} db={db} />}
         {tab === 3 && <TabJuegos act={act} A={A} Q={Q} />}
@@ -147,7 +147,7 @@ export function ActivityFormModal({ db, initial, onClose, onSave, onQuickUpdate,
   );
 }
 
-function TabInfo({ act, A }) {
+function TabInfo({ act, A, Q }) {
   return (
     <div className="flex flex-col gap-4">
       <Label>Fecha</Label>
@@ -157,6 +157,24 @@ function TabInfo({ act, A }) {
         <HelpInfo title="Flujo de Carga" text="1. Marcá Asistencia. 2. Asigná Equipos. 3. Cargá Juegos y Deportes. Los puntos se calculan automáticamente." />
       </div>
       <input value={act.titulo} onChange={(e) => A('titulo', e.target.value)} placeholder="Ej: Actividad Mayo" className="input mt-2" />
+      
+      <div className="bg-white rounded-2xl p-4 border border-surface-dark shadow-sm">
+        <Label>Cantidad de Equipos</Label>
+        <SegmentedButtons
+          options={[
+            { val: 4, label: '4 Equipos' },
+            { val: 6, label: '6 Equipos' }
+          ]}
+          value={act.cantEquipos || 4}
+          onChange={(v) => {
+            if (act.id) Q('config', { k: 'cantEquipos', v }, 'cantEquipos', v);
+            else A('cantEquipos', v);
+          }}
+        />
+        <div className="text-[10px] text-text-muted mt-2">
+          {act.cantEquipos === 6 ? 'Se habilitarán E5 y E6 en todas las secciones.' : 'Configuración estándar de 4 equipos (E1 a E4).'}
+        </div>
+      </div>
     </div>
   );
 }
@@ -344,6 +362,8 @@ function TabAsistencia({ act, A, Q, db, onSaveParticipant }) {
 
 function TabEquipos({ act, A, Q, db }) {
   const [viewMode, setViewMode] = useState('list');
+  const activeTeams = useMemo(() => TEAMS.slice(0, act.cantEquipos || 4), [act.cantEquipos]);
+
   const present = useMemo(() =>
     db.participants.filter(p => act.asistentes.includes(p.id) && !(act.socials || []).includes(p.id)).sort((a, b) => `${a.apellido} ${a.nombre}`.localeCompare(`${b.apellido} ${b.nombre}`))
     , [db.participants, act.asistentes, act.socials]);
@@ -363,19 +383,19 @@ function TabEquipos({ act, A, Q, db }) {
   const autoBalance = (resetAll = false) => {
     const eq = resetAll ? {} : { ...(act.equipos || {}) };
     const counts = {};
-    TEAMS.forEach(t => { counts[t] = { M: 0, F: 0, total: 0 }; });
+    activeTeams.forEach(t => { counts[t] = { M: 0, F: 0, total: 0 }; });
     if (!resetAll) {
       present.forEach(p => {
         const t = eq[p.id];
-        if (t) { counts[t][p.sexo]++; counts[t].total++; }
+        if (t && activeTeams.includes(t)) { counts[t][p.sexo]++; counts[t].total++; }
       });
     }
     const unassigned = present.filter(p => !eq[p.id]);
     const masc = unassigned.filter(p => p.sexo === 'M');
     const fem = unassigned.filter(p => p.sexo === 'F');
-
+    
     [...masc, ...fem].forEach(p => {
-      const best = [...TEAMS].sort((a, b) => counts[a][p.sexo] - counts[b][p.sexo] || counts[a].total - counts[b].total)[0];
+      const best = [...activeTeams].sort((a, b) => counts[a][p.sexo] - counts[b][p.sexo] || counts[a].total - counts[b].total)[0];
       eq[p.id] = best;
       counts[best][p.sexo]++;
       counts[best].total++;
@@ -383,7 +403,7 @@ function TabEquipos({ act, A, Q, db }) {
     A('equipos', eq);
   };
 
-  const teamStats = TEAMS.map(t => ({
+  const teamStats = activeTeams.map(t => ({
     team: t,
     total: present.filter(p => act.equipos?.[p.id] === t).length,
     m: present.filter(p => act.equipos?.[p.id] === t && p.sexo === 'M').length,
@@ -424,7 +444,7 @@ function TabEquipos({ act, A, Q, db }) {
                   <div className="font-bold text-sm">{p.nombre} {p.apellido}</div>
                 </div>
                 <div className="flex gap-1">
-                  {TEAMS.map(t => (
+                  {activeTeams.map(t => (
                     <button key={t} onClick={() => setTeam(p.id, t)} className="w-8 h-7 rounded bg-surface-dark font-black text-[10px]" style={{ backgroundColor: cur === t ? TEAM_COLORS[t] : getTeamBg(t), color: cur === t ? 'white' : '#666' }}>{t}</button>
                   ))}
                 </div>
@@ -433,7 +453,7 @@ function TabEquipos({ act, A, Q, db }) {
           })}
         </div>
       ) : (
-        <TeamTable act={act} participants={db.participants} onTeamChange={(pid, team) => setTeam(pid, team)} readOnly={false} />
+        <TeamTable act={act} participants={db.participants} onTeamChange={(pid, team) => setTeam(pid, team)} readOnly={true} />
       )}
     </div>
   );
@@ -478,7 +498,7 @@ function TabJuegos({ act, A, Q }) {
       </div>
       <div className="flex flex-col gap-4">
         {(act.juegos || []).map((j, gi) => (
-          <JuegoCard key={j.id} j={j} gi={gi} onNombre={(v) => updN(j.id, v)} onDel={() => del(j.id)} onPos={(team, pos) => updPos(j.id, team, pos)} />
+          <JuegoCard key={j.id} j={j} gi={gi} act={act} onNombre={(v) => updN(j.id, v)} onDel={() => del(j.id)} onPos={(team, pos) => updPos(j.id, team, pos)} />
         ))}
       </div>
       {(act.juegos || []).length === 0 && <Empty text="Sin juegos registrados" />}
@@ -486,12 +506,18 @@ function TabJuegos({ act, A, Q }) {
   );
 }
 
-function JuegoCard({ j, gi, onNombre, onDel, onPos }) {
+function JuegoCard({ j, gi, act, onNombre, onDel, onPos }) {
   const posToTeam = {};
   Object.entries(j.pos || {}).forEach(([t, p]) => { posToTeam[p] = t; });
   const placed = Object.keys(j.pos || {});
-  const unplaced = TEAMS.filter((t) => !placed.includes(t));
-  const medals = ['', '🥇', '🥈', '🥉', '4°'];
+  const activeTeams = TEAMS.slice(0, act.cantEquipos || 4);
+  const unplaced = activeTeams.filter((t) => !placed.includes(t));
+  const medals = ['', '🥇', '🥈', '🥉', '4°', '5°', '6°'];
+  const posArray = useMemo(() => {
+    const arr = [1, 2, 3, 4];
+    if (act.cantEquipos === 6) arr.push(5, 6);
+    return arr;
+  }, [act.cantEquipos]);
 
   return (
     <div className="bg-white rounded-2xl border border-surface-dark overflow-hidden shadow-sm">
@@ -502,13 +528,13 @@ function JuegoCard({ j, gi, onNombre, onDel, onPos }) {
       </div>
       <div className="p-3">
         <div className="flex flex-col gap-2 mb-3">
-          {[1, 2, 3, 4].map(pos => {
+          {posArray.map(pos => {
             const team = posToTeam[pos];
             return (
               <div key={pos} onClick={() => team && onPos(team, pos)} className="flex items-center gap-3 p-3 rounded-lg cursor-pointer min-h-12" style={{ backgroundColor: team ? getTeamBg(team) : '#f5f5f5', border: `2px solid ${team ? TEAM_COLORS[team] : '#e5e5e5'}` }}>
                 <div className="w-12 flex items-center gap-2">
                   <span className="text-lg">{medals[pos]}</span>
-                  <span className="text-xs text-text-muted font-bold">+{PTS.rec[pos]}</span>
+                  <span className="text-[10px] text-text-muted font-bold">+{PTS.rec[pos] || 0}</span>
                 </div>
                 {team ? (
                   <div className="flex-1 flex justify-between items-center">
@@ -527,7 +553,7 @@ function JuegoCard({ j, gi, onNombre, onDel, onPos }) {
             <div className="text-[10px] text-text-muted font-bold mb-2 uppercase tracking-wide">Sin posición — toca para asignar al siguiente lugar</div>
             <div className="flex gap-2 flex-wrap">
               {unplaced.map((t) => {
-                const nextPos = [1, 2, 3, 4].find((p) => !posToTeam[p]);
+                const nextPos = posArray.find((p) => !posToTeam[p]);
                 return (
                   <button key={t} onClick={() => nextPos && onPos(t, nextPos)} className="px-5 py-2 rounded-lg border-2 cursor-pointer font-black text-lg" style={{ borderColor: TEAM_COLORS[t], backgroundColor: getTeamBg(t), color: TEAM_COLORS[t] }}>
                     {t}
@@ -677,11 +703,11 @@ function PartidoEditModal({ part: initialPart, act, db, onClose, onUpd, onDel, Q
           </div>
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="text-center">
-              <select value={part.eq1} onChange={(e) => update('eq1', e.target.value)} className="input mb-2 text-center font-black" style={{ color: TEAM_COLORS[part.eq1], backgroundColor: getTeamBg(part.eq1) }}>{TEAMS.map(t => <option key={t} value={t}>{t}</option>)}</select>
+              <select value={part.eq1} onChange={(e) => update('eq1', e.target.value)} className="input mb-2 text-center font-black" style={{ color: TEAM_COLORS[part.eq1], backgroundColor: getTeamBg(part.eq1) }}>{TEAMS.slice(0, act.cantEquipos || 4).map(t => <option key={t} value={t}>{t}</option>)}</select>
               <div className="flex items-center justify-center gap-2"><button onClick={() => addGoal(part.eq1)} className="w-10 h-10 bg-primary text-white rounded-full font-black text-xl">+</button><span className="text-3xl font-black">{s1}</span></div>
             </div>
             <div className="text-center">
-              <select value={part.eq2} onChange={(e) => update('eq2', e.target.value)} className="input mb-2 text-center font-black" style={{ color: TEAM_COLORS[part.eq2], backgroundColor: getTeamBg(part.eq2) }}>{TEAMS.map(t => <option key={t} value={t}>{t}</option>)}</select>
+              <select value={part.eq2} onChange={(e) => update('eq2', e.target.value)} className="input mb-2 text-center font-black" style={{ color: TEAM_COLORS[part.eq2], backgroundColor: getTeamBg(part.eq2) }}>{TEAMS.slice(0, act.cantEquipos || 4).map(t => <option key={t} value={t}>{t}</option>)}</select>
               <div className="flex items-center justify-center gap-2"><span className="text-3xl font-black">{s2}</span><button onClick={() => addGoal(part.eq2)} className="w-10 h-10 bg-primary text-white rounded-full font-black text-xl">+</button></div>
             </div>
           </div>
@@ -772,33 +798,115 @@ function scorerOptions(act, db) {
 }
 
 function TabExtras({ act, A, db }) {
-  const addE = () => A('extras', [...(act.extras || []), { id: Date.now(), pid: null, puntos: 5, motivo: '' }]);
-  const addD = () => A('descuentos', [...(act.descuentos || []), { id: Date.now(), pid: null, puntos: 5, motivo: '' }]);
+  const [view, setView] = useState('ind'); // 'ind' or 'team'
+  const [pts, setPts] = useState(5);
+
+  const addE = () => A('extras', [...(act.extras || []), { 
+    id: Date.now(), 
+    pid: view === 'ind' ? null : undefined, 
+    team: view === 'team' ? TEAMS[0] : undefined, 
+    puntos: pts, 
+    motivo: '' 
+  }]);
+  const addD = () => A('descuentos', [...(act.descuentos || []), { 
+    id: Date.now(), 
+    pid: view === 'ind' ? null : undefined, 
+    team: view === 'team' ? TEAMS[0] : undefined, 
+    puntos: pts, 
+    motivo: '' 
+  }]);
+
   const updE = (id, k, v) => A('extras', (act.extras || []).map(e => e.id === id ? { ...e, [k]: v } : e));
   const updD = (id, k, v) => A('descuentos', (act.descuentos || []).map(d => d.id === id ? { ...d, [k]: v } : d));
 
+  const filteredE = (act.extras || []).filter(x => view === 'team' ? !!x.team : !x.team);
+  const filteredD = (act.descuentos || []).filter(x => view === 'team' ? !!x.team : !x.team);
+
   return (
     <div>
-      <div className="mb-4">
-        <div className="flex justify-between items-center mb-3"><Label style={{ color: '#22C55E' }}>⭐ Extras (+5)</Label><button onClick={addE} className="pill-btn bg-green-50 text-green-600">+ Agregar</button></div>
-        <div className="flex flex-col gap-2">{(act.extras || []).map(e => <ExtraRow key={e.id} item={e} color="#22C55E" onDel={(id) => A('extras', act.extras.filter(x => x.id !== id))} onUpd={updE} db={db} act={act} />)}</div>
+      <div className="mb-6">
+        <SegmentedButtons
+          value={view}
+          onChange={setView}
+          options={[
+            { value: 'ind', label: 'Individual' },
+            { value: 'team', label: 'Por Equipos' }
+          ]}
+        />
       </div>
-      <div>
-        <div className="flex justify-between items-center mb-3"><Label style={{ color: '#FF6B6B' }}>🔻 Descuentos (-5)</Label><button onClick={addD} className="pill-btn bg-red-50 text-red-500">+ Agregar</button></div>
-        <div className="flex flex-col gap-2">{(act.descuentos || []).map(d => <ExtraRow key={d.id} item={d} color="#FF6B6B" onDel={(id) => A('descuentos', act.descuentos.filter(x => x.id !== id))} onUpd={updD} db={db} act={act} />)}</div>
+
+      <div className="flex gap-2 mb-6 p-2 bg-surface-dark rounded-xl items-center">
+        <span className="text-[10px] font-black text-text-muted uppercase px-2">Puntos:</span>
+        {[2, 5, 10].map(v => (
+          <button
+            key={v}
+            onClick={() => setPts(v)}
+            className={cn(
+              "flex-1 py-1.5 rounded-lg font-black text-sm transition-all",
+              pts === v ? "bg-primary text-white shadow-md shadow-primary/20" : "bg-white text-text-muted border border-surface-dark"
+            )}
+          >
+            {v}
+          </button>
+        ))}
+      </div>
+
+      <div className="space-y-6">
+        <div>
+          <div className="flex justify-between items-center mb-3">
+            <Label style={{ color: '#22C55E', margin: 0 }}>⭐ Extras</Label>
+            <button onClick={addE} className="pill-btn bg-green-50 text-green-600 font-black">+ Agregar {pts}</button>
+          </div>
+          <div className="flex flex-col gap-2">
+            {filteredE.length === 0 ? <div className="text-center py-4 bg-surface-dark/30 rounded-xl text-[10px] font-bold text-text-muted uppercase tracking-wider">Sin extras {view === 'team' ? 'por equipo' : 'individuales'}</div> :
+              filteredE.map(e => <ExtraRow key={e.id} item={e} color="#22C55E" onDel={(id) => A('extras', act.extras.filter(x => x.id !== id))} onUpd={updE} db={db} act={act} isTeam={view === 'team'} />)
+            }
+          </div>
+        </div>
+
+        <div className="pt-4 border-t border-surface-dark">
+          <div className="flex justify-between items-center mb-3">
+            <Label style={{ color: '#FF6B6B', margin: 0 }}>🔻 Descuentos</Label>
+            <button onClick={addD} className="pill-btn bg-red-50 text-red-500 font-black">+ Agregar {pts}</button>
+          </div>
+          <div className="flex flex-col gap-2">
+            {filteredD.length === 0 ? <div className="text-center py-4 bg-surface-dark/30 rounded-xl text-[10px] font-bold text-text-muted uppercase tracking-wider">Sin descuentos {view === 'team' ? 'por equipo' : 'individuales'}</div> :
+              filteredD.map(d => <ExtraRow key={d.id} item={d} color="#FF6B6B" onDel={(id) => A('descuentos', act.descuentos.filter(x => x.id !== id))} onUpd={updD} db={db} act={act} isTeam={view === 'team'} />)
+            }
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-function ExtraRow({ item, color, onDel, onUpd, db, act }) {
+function ExtraRow({ item, color, onDel, onUpd, db, act, isTeam }) {
+  const activeTeams = TEAMS.slice(0, act.cantEquipos || 4);
+  
   return (
     <div className="bg-white rounded-xl p-3 border shadow-sm" style={{ borderColor: color + '33' }}>
-      <div className="flex gap-2 mb-2">
-        <select value={item.pid || ''} onChange={(e) => onUpd(item.id, 'pid', Number(e.target.value) || null)} className="input mb-0 flex-1 text-xs">{scorerOptions(act, db)}</select>
-        <button onClick={() => onDel(item.id)} className="text-red-500">✕</button>
+      <div className="flex gap-2 items-center mb-2">
+        <div className="bg-surface-dark px-2 py-1 rounded-lg font-black text-xs" style={{ color }}>{item.puntos}</div>
+        {isTeam ? (
+          <select 
+            value={item.team || ''} 
+            onChange={(e) => onUpd(item.id, 'team', e.target.value)} 
+            className="input mb-0 flex-1 text-xs font-black"
+            style={{ color: TEAM_COLORS[item.team], backgroundColor: getTeamBg(item.team) }}
+          >
+            {activeTeams.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+        ) : (
+          <select value={item.pid || ''} onChange={(e) => onUpd(item.id, 'pid', Number(e.target.value) || null)} className="input mb-0 flex-1 text-xs">{scorerOptions(act, db)}</select>
+        )}
+        <button onClick={() => onDel(item.id)} className="w-8 h-8 flex items-center justify-center text-red-400 bg-red-50 rounded-lg">✕</button>
       </div>
-      <input value={item.motivo} onChange={(e) => onUpd(item.id, 'motivo', e.target.value)} placeholder="Motivo..." className="input mb-0 text-xs" />
+      <input 
+        value={item.motivo || ''} 
+        onChange={(e) => onUpd(item.id, 'motivo', e.target.value)} 
+        placeholder="¿Por qué? (opcional)" 
+        className="input mb-0 text-xs py-1.5" 
+      />
     </div>
   );
 }

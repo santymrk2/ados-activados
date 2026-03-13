@@ -14,8 +14,10 @@ export function TeamTable({ participants, act, onTeamChange, readOnly = false })
     [participants, act.asistentes]
   );
 
+  const activeTeams = useMemo(() => TEAMS.slice(0, act.cantEquipos || 4), [act.cantEquipos]);
+
   const tableData = useMemo(() => {
-    return TEAMS.map((team) => {
+    return activeTeams.map((team) => {
       const members = present.filter((p) => act.equipos?.[p.id] === team);
       return {
         team,
@@ -23,7 +25,7 @@ export function TeamTable({ participants, act, onTeamChange, readOnly = false })
         men: members.filter((p) => p.sexo === 'M').sort((a, b) => `${a.apellido} ${a.nombre}`.localeCompare(`${b.apellido} ${b.nombre}`)),
       };
     });
-  }, [present, act.equipos]);
+  }, [present, act.equipos, activeTeams]);
 
   const unassigned = present.filter((p) => !act.equipos?.[p.id]).length;
 
@@ -42,7 +44,7 @@ export function TeamTable({ participants, act, onTeamChange, readOnly = false })
         </div>
       )}
       <div className="overflow-x-auto rounded-xl border border-surface-dark">
-        <table className="w-full border-collapse text-sm" style={{ minWidth: TEAMS.length * 110 }}>
+        <table className="w-full border-collapse text-sm" style={{ minWidth: activeTeams.length * 110 }}>
           <thead>
             <tr>
               {tableData.map(({ team }) => (

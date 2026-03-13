@@ -14,6 +14,7 @@ export const activities = sqliteTable('activities', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   fecha: text('fecha').notNull(),
   titulo: text('titulo'),
+  cantEquipos: integer('cant_equipos').notNull().default(4),
 });
 
 export const activityParticipants = sqliteTable('activity_participants', {
@@ -61,9 +62,11 @@ export const goles = sqliteTable('goles', {
 export const extras = sqliteTable('extras', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   activityId: integer('activity_id').notNull().references(() => activities.id, { onDelete: 'cascade' }),
-  participantId: integer('participant_id').notNull().references(() => participants.id, { onDelete: 'cascade' }),
+  participantId: integer('participant_id').references(() => participants.id, { onDelete: 'cascade' }),
+  team: text('team'),
   tipo: text('tipo').notNull(), // "extra" or "descuento"
   puntos: integer('puntos').notNull(),
+  motivo: text('motivo'),
 });
 
 export const invitaciones = sqliteTable('invitaciones', {
