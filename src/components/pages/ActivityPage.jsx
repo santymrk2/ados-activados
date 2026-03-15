@@ -297,16 +297,19 @@ export default function ActivityPage({ id }) {
         )}
       </div>
 
-      <div className="fixed bottom-4 left-4 right-4 bg-white rounded-2xl shadow-lg shadow-black/10 border border-surface-dark flex z-50 p-2 safe-area-bottom">
-        <div className="flex overflow-x-auto gap-1 no-scrollbar max-w-full">
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-white rounded-2xl shadow-xl shadow-black/10 border border-surface-dark flex z-50 p-1.5  w-fit max-w-[calc(100vw-2rem)] transition-all">
+        <div className="flex items-center overflow-hidden gap-0.5 no-scrollbar max-w-full justify-center">
           {TABS.map(({ icon: Icon, label }, i) => (
             <button
               key={i}
               onClick={() => setTab(i)}
-              className={`flex flex-col items-center justify-center py-2 px-2 rounded-xl transition-colors flex-1 min-w-[60px] ${tab === i ? 'text-primary bg-primary/10' : 'text-text-muted hover:text-dark'}`}
+              className={cn(
+                "flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all flex-shrink-0 min-w-[70px]",
+                tab === i ? "text-primary bg-primary/10 shadow-sm" : "text-text-muted hover:text-primary "
+              )}
             >
-              <Icon className="w-5 h-5 mb-0.5" />
-              <span className="text-[8px] font-bold">{label}</span>
+              <Icon className={cn("w-5 h-5 mb-0.5", tab === i ? "scale-110" : "scale-100")} />
+              <span className="text-[9px] font-bold tracking-tight uppercase">{label}</span>
             </button>
           ))}
         </div>

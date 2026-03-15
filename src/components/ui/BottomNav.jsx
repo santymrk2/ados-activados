@@ -37,12 +37,12 @@ export function BottomNav() {
           <a
             key={path}
             href={path}
-            className={`relative p-2.5 rounded-xl transition-all duration-200 ${
-              isActive ? 'text-primary bg-primary/10' : 'text-text-muted hover:text-dark'
+            className={`flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all duration-200 min-w-[70px] ${
+              isActive ? 'text-primary bg-primary/10' : 'text-text-muted hover:text-primary'
             }`}
-            title={label}
           >
-            <Icon className="w-5 h-5" />
+            <Icon className="w-5 h-5 mb-0.5" />
+            <span className="text-[9px] font-bold uppercase tracking-wider">{label}</span>
           </a>
         );
       })}
