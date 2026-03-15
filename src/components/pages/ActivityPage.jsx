@@ -297,7 +297,7 @@ export default function ActivityPage({ id }) {
         )}
       </div>
 
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-white rounded-2xl shadow-xl shadow-black/10 border border-surface-dark flex z-50 p-1.5  w-fit max-w-[calc(100vw-2rem)] transition-all">
+      <div className="fixed px-3 py-2 bottom-4 left-1/2 -translate-x-1/2 bg-white rounded-2xl shadow-xl shadow-black/10 border border-surface-dark flex z-50 p-1.5  w-fit max-w-[calc(100vw-2rem)] transition-all">
         <div className="flex items-center overflow-hidden gap-0.5 no-scrollbar max-w-full justify-center">
           {TABS.map(({ icon: Icon, label }, i) => (
             <button
