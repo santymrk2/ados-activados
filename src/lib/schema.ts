@@ -24,6 +24,7 @@ export const activityParticipants = sqliteTable('activity_participants', {
   equipo: text('equipo'), // e.g. "E1", "E2" or null
   esPuntual: integer('es_puntual', { mode: 'boolean' }).default(false),
   tieneBiblia: integer('tiene_biblia', { mode: 'boolean' }).default(false),
+  esSocial: integer('es_social', { mode: 'boolean' }).default(false),
 });
 
 export const juegos = sqliteTable('juegos', {

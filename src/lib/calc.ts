@@ -41,9 +41,8 @@ export function actPts(pid: number, a: any, participants: any[]) {
       }
     }
     if ((a.invitaciones || []).some((i: any) => i.invitador === pid)) pts += PTS.invito;
+    if ((a.invitaciones || []).some((i: any) => i.invitado_id === pid)) pts += PTS.invitado;
   }
-  
-  if ((a.invitaciones || []).some((i: any) => i.invitado_id === pid)) pts += PTS.invitado;
   
   for (const e of (a.extras || [])) {
     if (e.pid === pid || (team && e.team === team)) pts += (e.puntos as number);

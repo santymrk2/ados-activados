@@ -115,8 +115,8 @@ export function ActivityFormModal({ db, initial, onClose, onSave, onQuickUpdate,
         {tab === 7 && <TabExtras act={act} A={A} db={db} />}
       </div>
 
-      <div className="fixed px-3 py-2 bottom-4 left-1/2 -translate-x-1/2 bg-white rounded-2xl shadow-xl shadow-black/10 border border-surface-dark flex z-50 p-1.5  w-fit max-w-[calc(100vw-2rem)] transition-all">
-        <div className="flex items-center overflow-hidden gap-0.5 no-scrollbar max-w-full justify-center">
+      <div className="fixed px-3 py-2 bottom-4 left-1/2 -translate-x-1/2 bg-white rounded-2xl shadow-xl shadow-black/10 border border-surface-dark flex z-50 p-1.5 w-full max-w-[calc(100vw-2rem)] transition-all">
+        <div className="flex items-center overflow-x-auto gap-0.5 no-scrollbar max-w-full justify-start">
           {TABS.map(({ icon: Icon, label, key }, i) => (
             <button
               key={key}
@@ -206,7 +206,7 @@ function TabAsistencia({ act, A, Q, db, onSaveParticipant }) {
         A('equipos', newEq);
       }
     } else if (key === 'socials') {
-      A(key, newValue);
+      Q('socials', { participantId: id, value: !isIncluded }, key, newValue);
       // If marking as social, remove from teams
       if (!isIncluded) {
         const newEq = { ...act.equipos };
@@ -249,9 +249,13 @@ function TabAsistencia({ act, A, Q, db, onSaveParticipant }) {
     setIsSubmittingPlayer(true);
     try {
       const p = { ...newPart(), ...newPlayer, id: db.nextPid };
-      const newId = await onSaveParticipant(p, true, newPlayer.invitadorId);
+      // Remove invitadorId from p as it's not a column in participants table
+      const { invitadorId, ...participantData } = p;
+      const newId = await onSaveParticipant(participantData, true, invitadorId);
       const playerId = newId || p.id;
-      A('asistentes', [...act.asistentes, playerId]);
+      
+      const newAsistentes = Array.from(new Set([...act.asistentes, playerId]));
+      Q('attendance', { participantId: playerId, value: true }, 'asistentes', newAsistentes);
 
       if (newPlayer.invitadorId) {
         A('invitaciones', [...(act.invitaciones || []), {
@@ -289,7 +293,10 @@ function TabAsistencia({ act, A, Q, db, onSaveParticipant }) {
             </select>
             <select value={newPlayer.invitadorId || ''} onChange={(e) => setNewPlayer(p => ({ ...p, invitadorId: e.target.value ? Number(e.target.value) : null }))} className="input mb-0 text-sm">
               <option value="">¿Quién lo invitó?</option>
-              {db.participants.filter(p => act.asistentes.includes(p.id)).map(p => (
+              {db.participants
+                .filter(p => act.asistentes.includes(p.id))
+                .sort((a, b) => `${a.apellido} ${a.nombre}`.localeCompare(`${b.apellido} ${b.nombre}`))
+                .map(p => (
                 <option key={p.id} value={p.id}>{p.nombre} {p.apellido}</option>
               ))}
             </select>

@@ -37,6 +37,7 @@ export async function GET() {
         asistentes: actAp.map(x => x.participantId),
         puntuales: actAp.filter(x => x.esPuntual).map(x => x.participantId),
         biblias: actAp.filter(x => x.tieneBiblia).map(x => x.participantId),
+        socials: actAp.filter(x => x.esSocial).map(x => x.participantId),
         equipos,
         juegos: actJuegos,
         partidos: part.filter(x => x.activityId === a.id).map(p => ({
@@ -100,6 +101,7 @@ export async function POST({ request }: { request: Request }) {
         equipo: data.equipos && data.equipos[pid] ? data.equipos[pid] : null,
         esPuntual: (data.puntuales || []).includes(pid),
         tieneBiblia: (data.biblias || []).includes(pid),
+        esSocial: (data.socials || []).includes(pid),
       }));
       await db.insert(schema.activityParticipants).values(apData);
     }
@@ -249,6 +251,16 @@ export async function PATCH({ request }: { request: Request }) {
         const { participantId, team } = data;
         await db.update(schema.activityParticipants)
           .set({ equipo: team })
+          .where(and(
+            eq(schema.activityParticipants.activityId, activityId),
+            eq(schema.activityParticipants.participantId, participantId)
+          ));
+        break;
+      }
+      case 'socials': {
+        const { participantId, value } = data;
+        await db.update(schema.activityParticipants)
+          .set({ esSocial: value })
           .where(and(
             eq(schema.activityParticipants.activityId, activityId),
             eq(schema.activityParticipants.participantId, participantId)

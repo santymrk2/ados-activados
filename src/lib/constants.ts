@@ -154,7 +154,7 @@ function darkenColor(hex: string, percent: number): string {
 export const MEDALS = ["🥇", "🥈", "🥉", "4°", "5°", "6°", "7°", "8°", "9°", "10°"];
 export const DEPORTES = ["Fútbol", "Handball", "Básquet", "Vóley", "Otro"];
 export const GENEROS = [
-  { val: "M", label: "Varrones" },
+  { val: "M", label: "Varones" },
   { val: "F", label: "Mujeres" }
 ];
 export const PTS = {
