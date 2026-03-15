@@ -127,7 +127,7 @@ export function ActivityFormModal({ db, initial, onClose, onSave, onQuickUpdate,
               )}
             >
               <Icon className={cn("w-5 h-5 mb-0.5", tab === i ? "scale-110" : "scale-100")} />
-              <span className="text-[9px] font-bold tracking-tight uppercase">{label}</span>
+              <span className="text-[9px] font-bold tracking-wide uppercase">{label}</span>
             </button>
           ))}
         </div>
