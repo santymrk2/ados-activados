@@ -100,6 +100,73 @@ export async function getCroppedImg(imageSrc, pixelCrop) {
   return canvas.toDataURL('image/jpeg', 0.95);
 }
 
+// Genera dos versiones de la imagen: alta calidad (máximo disponible) y optimizada para mostrar
+const MAX_SIZE = 1200; // Tamaño máximo para alta calidad
+const THUMB_SIZE = 300; // Tamaño para mostrar en el sistema
+
+function createScaledCanvas(originalWidth, originalHeight, maxSize) {
+  const canvas = document.createElement('canvas');
+  let width = originalWidth;
+  let height = originalHeight;
+
+  if (width > maxSize || height > maxSize) {
+    const ratio = Math.min(maxSize / width, maxSize / height);
+    width = Math.round(width * ratio);
+    height = Math.round(height * ratio);
+  }
+
+  canvas.width = width;
+  canvas.height = height;
+  return canvas;
+}
+
+export async function getDualCroppedImg(imageSrc, pixelCrop) {
+  const image = await createImage(imageSrc);
+  
+  // Imagen de alta calidad (máximo 1200px del lado más largo)
+  const altaCalidadCanvas = createScaledCanvas(pixelCrop.width, pixelCrop.height, MAX_SIZE);
+  const altaCalidadCtx = altaCalidadCanvas.getContext('2d');
+  altaCalidadCtx.imageSmoothingEnabled = true;
+  altaCalidadCtx.imageSmoothingQuality = 'high';
+  altaCalidadCtx.drawImage(
+    image,
+    pixelCrop.x,
+    pixelCrop.y,
+    pixelCrop.width,
+    pixelCrop.height,
+    0,
+    0,
+    altaCalidadCanvas.width,
+    altaCalidadCanvas.height
+  );
+  autoOrientImage(altaCalidadCtx, altaCalidadCanvas, image);
+  
+  // Imagen optimizada para mostrar (300px del lado más largo)
+  const thumbCanvas = createScaledCanvas(pixelCrop.width, pixelCrop.height, THUMB_SIZE);
+  const thumbCtx = thumbCanvas.getContext('2d');
+  thumbCtx.imageSmoothingEnabled = true;
+  thumbCtx.imageSmoothingQuality = 'high';
+  thumbCtx.drawImage(
+    image,
+    pixelCrop.x,
+    pixelCrop.y,
+    pixelCrop.width,
+    pixelCrop.height,
+    0,
+    0,
+    thumbCanvas.width,
+    thumbCanvas.height
+  );
+  autoOrientImage(thumbCtx, thumbCanvas, image);
+
+  return {
+    // Imagen de alta calidad (máximo 1200px del lado más largo) - para descargar
+    altaCalidad: altaCalidadCanvas.toDataURL('image/jpeg', 0.95),
+    // Versión optimizada para mostrar en el sistema (300px)
+    thumb: thumbCanvas.toDataURL('image/jpeg', 0.85),
+  };
+}
+
 export function downloadBase64Image(base64Data, filename) {
   const link = document.createElement('a');
   link.href = base64Data;

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import Cropper from 'react-easy-crop';
-import { getCroppedImg } from '../../lib/imageUtils';
+import { getDualCroppedImg } from '../../lib/imageUtils';
 import { X, Check, ZoomIn, ZoomOut } from 'lucide-react';
 
 export function ImageCropModal({ image, onCropComplete, onClose }) {
@@ -22,8 +22,8 @@ export function ImageCropModal({ image, onCropComplete, onClose }) {
 
   const handleDone = async () => {
     try {
-      const croppedImage = await getCroppedImg(image, croppedAreaPixels);
-      onCropComplete(croppedImage);
+      const { altaCalidad, thumb } = await getDualCroppedImg(image, croppedAreaPixels);
+      onCropComplete({ altaCalidad, thumb });
       onClose();
     } catch (e) {
       console.error(e);

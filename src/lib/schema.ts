@@ -7,6 +7,7 @@ export const participants = sqliteTable('participants', {
   fechaNacimiento: text('fecha_nacimiento'),
   sexo: text('sexo').notNull().default('M'),
   foto: text('foto'),
+  fotoAltaCalidad: text('foto_alta_calidad'),
   invitadoPor: integer('invitado_por'),
 });
 

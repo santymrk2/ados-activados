@@ -64,6 +64,18 @@ export function ParticipantFormModal({ db, initial, onClose, onSave }) {
     }
   };
 
+  // Manejar el callback del recorte - recibe ambas imágenes
+  const handleCropComplete = (cropped) => {
+    F('foto', cropped.thumb);
+    F('fotoAltaCalidad', cropped.altaCalidad);
+  };
+
+  // Descargar siempre la imagen de alta calidad
+  const handleDownload = () => {
+    const imagenParaDescargar = form.fotoAltaCalidad || form.foto;
+    downloadBase64Image(imagenParaDescargar, `perfil-${form.nombre || 'jugador'}.jpg`);
+  };
+
   return (
     <Modal title={form.id ? 'Editar Jugador' : 'Nuevo Jugador'} onClose={onClose}>
       <div className="flex flex-col items-center mb-5">
@@ -84,12 +96,12 @@ export function ParticipantFormModal({ db, initial, onClose, onSave }) {
           {form.foto && (
             <>
               <button
-                onClick={() => downloadBase64Image(form.foto, `perfil-${form.nombre || 'jugador'}.jpg`)}
+                onClick={handleDownload}
                 className="px-4 py-2 rounded-xl bg-teal-50 text-teal-600 font-bold text-sm flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
               >
                 <Download className="w-4 h-4" />
               </button>
-              <button onClick={() => F('foto', '')} className="px-4 py-2 rounded-xl bg-red-50 text-red-500 font-bold text-sm flex items-center gap-1.5 shadow-sm active:scale-95 transition-all">
+              <button onClick={() => { F('foto', ''); F('fotoAltaCalidad', ''); }} className="px-4 py-2 rounded-xl bg-red-50 text-red-500 font-bold text-sm flex items-center gap-1.5 shadow-sm active:scale-95 transition-all">
                 <X className="w-4 h-4" />
               </button>
             </>
@@ -120,7 +132,7 @@ export function ParticipantFormModal({ db, initial, onClose, onSave }) {
         <ImageCropModal
           image={tempImage}
           onClose={() => setTempImage(null)}
-          onCropComplete={(cropped) => F('foto', cropped)}
+          onCropComplete={handleCropComplete}
         />
       )}
     </Modal>
