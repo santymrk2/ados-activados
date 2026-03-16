@@ -158,13 +158,11 @@ export const GENEROS = [
   { val: "F", label: "Mujeres" }
 ];
 export const PTS = {
-  asistencia: 3,
-  puntualidad: 2,
+  asistencia: 10,
+  puntualidad: 5,
   biblia: 2,
-  invito: 5,
-  invitado: 3,
+  invite: 5,
   rec: { 1: 10, 2: 7, 3: 4, 4: 2, 5: 1, 6: 0 },
-  dep: { gano: 4, empato: 2, perdio: 1 },
 };
 
 function calcularEdad(fechaNacimiento: string) {

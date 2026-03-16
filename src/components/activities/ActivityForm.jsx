@@ -288,8 +288,8 @@ function TabAsistencia({ act, A, Q, db, onSaveParticipant }) {
             <input value={newPlayer.apellido} onChange={(e) => setNewPlayer(p => ({ ...p, apellido: e.target.value }))} placeholder="Apellido" className="input mb-0 text-sm" />
             <input value={newPlayer.fechaNacimiento} onChange={(e) => setNewPlayer(p => ({ ...p, fechaNacimiento: e.target.value }))} type="date" className="input mb-0 text-sm col-span-2" />
             <select value={newPlayer.sexo} onChange={(e) => setNewPlayer(p => ({ ...p, sexo: e.target.value }))} className="input mb-0 text-sm">
-              <option value="M">Varón</option>
-              <option value="F">Mujer</option>
+              <option value="M">Varones</option>
+              <option value="F">Mujeres</option>
             </select>
             <select value={newPlayer.invitadorId || ''} onChange={(e) => setNewPlayer(p => ({ ...p, invitadorId: e.target.value ? Number(e.target.value) : null }))} className="input mb-0 text-sm">
               <option value="">¿Quién lo invitó?</option>

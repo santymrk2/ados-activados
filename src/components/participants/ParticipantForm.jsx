@@ -1,34 +1,35 @@
 import { useState, useRef } from 'react';
 import { Toaster, toast } from 'sonner';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Download, Camera } from 'lucide-react';
 import { newPart, getEdad } from '../../lib/constants';
 import { Modal, Label, SegmentedButtons } from '../ui/Common';
 import { SexBadge } from '../ui/Badges';
 import { confirmDialog } from '../../lib/confirm';
+import { ImageCropModal } from '../ui/ImageCropModal';
+import { downloadBase64Image } from '../../lib/imageUtils';
 
 export function ParticipantFormModal({ db, initial, onClose, onSave }) {
   const [form, setForm] = useState({ ...newPart(), ...initial });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [tempImage, setTempImage] = useState(null);
   const fileRef = useRef();
 
   const F = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
+  const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
   const handlePhoto = (file) => {
     if (!file) return;
+    
+    // Validar tipo de archivo real
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+      toast.error('El archivo debe ser una imagen (JPEG, PNG, WebP o GIF)');
+      return;
+    }
+    
     const reader = new FileReader();
     reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const size = 160;
-        canvas.width = size;
-        canvas.height = size;
-        const ctx = canvas.getContext('2d');
-        const min = Math.min(img.width, img.height);
-        ctx.drawImage(img, (img.width - min) / 2, (img.height - min) / 2, min, min, 0, 0, size, size);
-        F('foto', canvas.toDataURL('image/jpeg', 0.75));
-      };
-      img.src = e.target.result;
+      setTempImage(e.target.result);
     };
     reader.readAsDataURL(file);
   };
@@ -77,13 +78,21 @@ export function ParticipantFormModal({ db, initial, onClose, onSave }) {
           )}
         </div>
         <div className="flex gap-2 mt-2">
-          <button onClick={() => fileRef.current?.click()} className="px-4 py-2 rounded-full bg-surface-dark text-primary font-bold text-sm border border-gray-300">
-            📷 Subir foto
+          <button onClick={() => fileRef.current?.click()} className="px-4 py-2 rounded-xl bg-surface-dark text-primary font-bold text-sm border border-gray-100 flex items-center gap-1.5 shadow-sm active:scale-95 transition-all">
+            <Camera className="w-4 h-4" /> Foto
           </button>
           {form.foto && (
-            <button onClick={() => F('foto', '')} className="px-4 py-2 rounded-full bg-red-50 text-red-500 font-bold text-sm">
-              ✕ Quitar
-            </button>
+            <>
+              <button
+                onClick={() => downloadBase64Image(form.foto, `perfil-${form.nombre || 'jugador'}.jpg`)}
+                className="px-4 py-2 rounded-xl bg-teal-50 text-teal-600 font-bold text-sm flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+              >
+                <Download className="w-4 h-4" />
+              </button>
+              <button onClick={() => F('foto', '')} className="px-4 py-2 rounded-xl bg-red-50 text-red-500 font-bold text-sm flex items-center gap-1.5 shadow-sm active:scale-95 transition-all">
+                <X className="w-4 h-4" />
+              </button>
+            </>
           )}
         </div>
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => handlePhoto(e.target.files[0])} />
@@ -97,8 +106,8 @@ export function ParticipantFormModal({ db, initial, onClose, onSave }) {
       <Label>Sexo</Label>
       <SegmentedButtons
         options={[
-          { val: 'M', label: <span className="flex items-center gap-1"><SexBadge sex="M" /> Varón</span> },
-          { val: 'F', label: <span className="flex items-center gap-1"><SexBadge sex="F" /> Mujer</span> },
+          { val: 'M', label: <span className="flex items-center gap-1 px-3 pl-1"><SexBadge sex="M" /> Varones</span> },
+          { val: 'F', label: <span className="flex items-center gap-1 px-3 pl-1"><SexBadge sex="F" /> Mujeres</span> },
         ]}
         value={form.sexo}
         onChange={(v) => F('sexo', v)}
@@ -106,6 +115,14 @@ export function ParticipantFormModal({ db, initial, onClose, onSave }) {
       <button onClick={submit} disabled={isSubmitting} className="w-full py-4 bg-primary text-white font-bold text-base rounded-xl border-none cursor-pointer mt-2 disabled:opacity-50">
         {isSubmitting ? 'Cargando...' : form.id ? 'Guardar Cambios' : 'Agregar Jugador'}
       </button>
+
+      {tempImage && (
+        <ImageCropModal
+          image={tempImage}
+          onClose={() => setTempImage(null)}
+          onCropComplete={(cropped) => F('foto', cropped)}
+        />
+      )}
     </Modal>
   );
 }

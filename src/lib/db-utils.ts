@@ -2,6 +2,15 @@ import { SEED_PARTICIPANTS, newAct } from './constants';
 
 const API_BASE = '/api';
 
+export async function checkDatabaseConnection() {
+  const res = await fetch(`${API_BASE}/health`);
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.message || 'No se puede conectar a la base de datos');
+  }
+  return true;
+}
+
 export async function getParticipants() {
   const res = await fetch(`${API_BASE}/participants`);
   if (!res.ok) throw new Error('Failed to fetch participants');

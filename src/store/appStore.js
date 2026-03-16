@@ -1,6 +1,6 @@
 import { atom, map, onMount } from 'nanostores';
-import { getParticipants, getActivities } from '../lib/db-utils';
-import { SEED_PARTICIPANTS, syncTeamConstants } from '../lib/constants';
+import { getParticipants, getActivities, checkDatabaseConnection } from '../lib/db-utils';
+import { syncTeamConstants } from '../lib/constants';
 
 // Auth State
 export const $isAuthenticated = atom(false);
@@ -11,11 +11,26 @@ export const $participants = atom([]);
 export const $activities = atom([]);
 export const $dbLoading = atom(true);
 export const $dbError = atom(null);
+export const $dbConnected = atom(false);
 
 // UI State
 export const $showSettings = atom(false);
 
 let isRefreshing = false;
+
+export const checkDbConnection = async () => {
+  try {
+    await checkDatabaseConnection();
+    $dbConnected.set(true);
+    $dbError.set(null);
+    return true;
+  } catch (e) {
+    console.error('DB Connection Error:', e);
+    $dbConnected.set(false);
+    $dbError.set(e);
+    return false;
+  }
+};
 
 export const refreshData = async (forceLoader = false) => {
   if (isRefreshing) return;
@@ -32,12 +47,11 @@ export const refreshData = async (forceLoader = false) => {
     $participants.set(p || []);
     $activities.set(a || []);
     $dbError.set(null);
+    $dbConnected.set(true);
   } catch (e) {
     console.error('Error loading DB:', e);
     $dbError.set(e);
-    if ($participants.get().length === 0) {
-      $participants.set(SEED_PARTICIPANTS);
-    }
+    $dbConnected.set(false);
   } finally {
     $dbLoading.set(false);
     isRefreshing = false;
@@ -57,6 +71,10 @@ export const getNextAid = () => {
 
 // Initialize once on client
 if (typeof window !== 'undefined') {
-  // Use a slight delay to not block the very first meaningful paint
-  setTimeout(() => refreshData(), 100);
+  setTimeout(async () => {
+    const isConnected = await checkDbConnection();
+    if (isConnected) {
+      refreshData();
+    }
+  }, 100);
 }

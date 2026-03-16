@@ -28,20 +28,8 @@ export function actPts(pid: number, a: any, participants: any[]) {
           pts += PTS.rec[r] || 0;
         }
       }
-      for (const part of (a.partidos || [])) {
-        if (part.genero === "M" && p.sexo !== "M") continue;
-        if (part.genero === "F" && p.sexo !== "F") continue;
-        if (part.eq1 !== team && part.eq2 !== team) continue;
-        if (!part.resultado) continue;
-        if (part.resultado === "empate") pts += PTS.dep.empato;
-        else {
-          const w = part.resultado === "eq1" ? part.eq1 : part.eq2;
-          pts += w === team ? PTS.dep.gano : PTS.dep.perdio;
-        }
-      }
     }
-    if ((a.invitaciones || []).some((i: any) => i.invitador === pid)) pts += PTS.invito;
-    if ((a.invitaciones || []).some((i: any) => i.invitado_id === pid)) pts += PTS.invitado;
+    if ((a.invitaciones || []).some((i: any) => i.invitador === pid)) pts += PTS.invite;
   }
   
   for (const e of (a.extras || [])) {

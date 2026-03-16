@@ -33,15 +33,14 @@ export function SexBadge({ sex, className = '' }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-black",
-        isM ? 'bg-cyan-100 text-cyan-600' : 
-        isMX ? 'bg-indigo-100 text-indigo-600' : 
-        'bg-pink-100 text-pink-500',
+        "inline-block rounded-full",
+        isM ? 'bg-cyan-500' : 
+        isMX ? 'bg-indigo-500' : 
+        'bg-pink-500',
         className
       )}
-    >
-      {sex}
-    </span>
+      style={{ width: '8px', height: '8px', minWidth: '8px' }}
+    />
   );
 }
 

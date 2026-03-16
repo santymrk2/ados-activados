@@ -343,7 +343,7 @@ function PartidosView({ partidos }) {
               filterGenero === t.val ? `${t.activeBg} text-white border-transparent shadow-sm` : "bg-white text-text-muted border-surface-dark"
             )}
           >
-            {t.val === 'all' ? t.label : <span className="flex items-center justify-center gap-1"><SexBadge sex={t.val} /> {t.label}</span>}
+            {t.label}
           </button>
         ))}
       </div>
