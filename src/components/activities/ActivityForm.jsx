@@ -481,11 +481,6 @@ function TabJuegos({ act, A, Q }) {
     if (!game) return;
 
     const newPos = { ...game.pos };
-    // Swap logic: if another team had this position, they take the current team's old position
-    const prev = Object.entries(newPos).find(([t, p]) => p === pos && t !== team);
-    if (prev) {
-      newPos[prev[0]] = newPos[team];
-    }
 
     // Toggle logic: if clicking the same position, remove it
     if (newPos[team] === pos) {
@@ -517,8 +512,12 @@ function TabJuegos({ act, A, Q }) {
 }
 
 function JuegoCard({ j, gi, act, onNombre, onDel, onPos }) {
-  const posToTeam = {};
-  Object.entries(j.pos || {}).forEach(([t, p]) => { posToTeam[p] = t; });
+  const posToTeams = {};
+  Object.entries(j.pos || {}).forEach(([t, p]) => {
+    if (!posToTeams[p]) posToTeams[p] = [];
+    posToTeams[p].push(t);
+  });
+  
   const placed = Object.keys(j.pos || {});
   const activeTeams = TEAMS.slice(0, act.cantEquipos || 4);
   const unplaced = activeTeams.filter((t) => !placed.includes(t));
@@ -531,49 +530,58 @@ function JuegoCard({ j, gi, act, onNombre, onDel, onPos }) {
 
   return (
     <div className="bg-white rounded-2xl border border-surface-dark overflow-hidden shadow-sm">
-      <div className="flex items-center gap-3 p-3 border-b border-surface-dark">
+      <div className="flex items-center gap-3 p-3 border-b border-surface-dark bg-background">
         <div className="w-7 h-7 bg-primary/10 rounded-lg flex items-center justify-center font-black text-primary text-xs">{gi + 1}</div>
-        <input value={j.nombre} onChange={(e) => onNombre(e.target.value)} placeholder="Nombre del juego..." className="input mb-0 flex-1" />
+        <input value={j.nombre} onChange={(e) => onNombre(e.target.value)} placeholder="Nombre del juego..." className="input mb-0 flex-1 bg-white" />
         <button onClick={onDel} className="w-11 h-11 text-red-500 bg-red-50 rounded-xl flex items-center justify-center border-none cursor-pointer">✕</button>
       </div>
       <div className="p-3">
         <div className="flex flex-col gap-2 mb-3">
           {posArray.map(pos => {
-            const team = posToTeam[pos];
+            const teamsInPos = posToTeams[pos] || [];
             return (
-              <div key={pos} onClick={() => team && onPos(team, pos)} className="flex items-center gap-3 p-3 rounded-lg cursor-pointer min-h-12" style={{ backgroundColor: team ? getTeamBg(team) : '#f5f5f5', border: `2px solid ${team ? TEAM_COLORS[team] : '#e5e5e5'}` }}>
-                <div className="w-12 flex items-center gap-2">
-                  <span className="text-lg">{medals[pos]}</span>
-                  <span className="text-[10px] text-text-muted font-bold">+{PTS.rec[pos] || 0}</span>
+              <div key={pos} className="flex flex-col p-2 rounded-xl min-h-12 bg-surface-dark/10 border border-surface-dark/30">
+                <div className="flex items-center gap-2 mb-2 px-1">
+                  <span className="text-lg leading-none">{medals[pos]}</span>
+                  <span className="text-[10px] text-text-muted font-bold tracking-wider">+{PTS.rec[pos] || 0} PTS</span>
                 </div>
-                {team ? (
-                  <div className="flex-1 flex justify-between items-center">
-                    <span className="font-black text-xl" style={{ color: TEAM_COLORS[team] }}>{team}</span>
-                    <span className="text-xs text-text-muted">toca para quitar</span>
+                {teamsInPos.length > 0 ? (
+                  <div className="flex gap-2 flex-wrap">
+                    {teamsInPos.map(team => (
+                      <div key={team} onClick={() => onPos(team, pos)} className="flex items-center justify-between px-3 py-1.5 rounded-lg cursor-pointer flex-1 min-w-[100px]" style={{ backgroundColor: getTeamBg(team), border: `2px solid ${TEAM_COLORS[team]}`, boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                        <span className="font-black text-sm" style={{ color: TEAM_COLORS[team] }}>{team}</span>
+                        <span className="text-[9px] opacity-70 uppercase font-black" style={{ color: TEAM_COLORS[team] }}>quitar</span>
+                      </div>
+                    ))}
                   </div>
                 ) : (
-                  <span className="text-text-muted text-sm">— tocar equipo de abajo para asignar</span>
+                  <div className="text-text-muted text-xs px-1 opacity-60">— Vacío</div>
                 )}
               </div>
             );
           })}
         </div>
+        
         {unplaced.length > 0 && (
-          <div>
-            <div className="text-[10px] text-text-muted font-bold mb-2 uppercase tracking-wide">Sin posición — toca para asignar al siguiente lugar</div>
-            <div className="flex gap-2 flex-wrap">
-              {unplaced.map((t) => {
-                const nextPos = posArray.find((p) => !posToTeam[p]);
-                return (
-                  <button key={t} onClick={() => nextPos && onPos(t, nextPos)} className="px-5 py-2 rounded-lg border-2 cursor-pointer font-black text-lg" style={{ borderColor: TEAM_COLORS[t], backgroundColor: getTeamBg(t), color: TEAM_COLORS[t] }}>
-                    {t}
-                  </button>
-                );
-              })}
+          <div className="bg-background rounded-xl p-3 border border-surface-dark">
+            <div className="text-[10px] text-text-muted font-bold mb-3 uppercase tracking-wide text-center">Asignar equipos sin posición</div>
+            <div className="flex gap-2 flex-wrap justify-center">
+              {unplaced.map((t) => (
+                <div key={t} className="flex flex-col items-center gap-1.5 rounded-xl p-2 border-2 shadow-sm" style={{ borderColor: TEAM_COLORS[t], backgroundColor: getTeamBg(t) }}>
+                  <span className="font-black text-sm" style={{ color: TEAM_COLORS[t] }}>{t}</span>
+                  <div className="flex flex-wrap justify-center gap-1 bg-white/60 rounded-lg p-1 w-full min-w-[120px]">
+                    {posArray.map(p => (
+                      <button key={p} onClick={() => onPos(t, p)} className="flex-1 min-w-6 h-7 rounded-md flex items-center justify-center font-bold text-[11px] bg-white border border-black/10 text-black shadow-sm hover:bg-black/5 active:scale-95 transition-all">
+                        {p}°
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
-        {unplaced.length === 0 && <div className="text-xs text-green-600 text-center pt-1">✓ Todos posicionados</div>}
+        {unplaced.length === 0 && <div className="text-xs text-green-600 font-bold bg-green-50 p-2 rounded-lg border border-green-100 text-center">✓ Todos posicionados</div>}
       </div>
     </div>
   );
