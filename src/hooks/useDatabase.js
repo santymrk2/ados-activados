@@ -56,8 +56,8 @@ export function useDatabase() {
   const db = useMemo(() => ({
     participants,
     activities,
-    nextPid: Math.max(...participants.map(p => p.id), 0) + 1,
-    nextAid: Math.max(...activities.map(a => a.id), 0) + 1,
+    nextPid: Math.max(0, ...participants.map(p => p.id)) + 1,
+    nextAid: Math.max(0, ...activities.map(a => a.id)) + 1,
   }), [participants, activities]);
 
   return {

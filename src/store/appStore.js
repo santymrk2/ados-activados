@@ -17,6 +17,7 @@ export const $dbConnected = atom(false);
 export const $showSettings = atom(false);
 
 let isRefreshing = false;
+let initialLoadDone = false;
 
 export const checkDbConnection = async () => {
   try {
@@ -34,9 +35,9 @@ export const checkDbConnection = async () => {
 
 export const refreshData = async (forceLoader = false) => {
   if (isRefreshing) return;
-  
-  const hasData = $participants.get().length > 0 || $activities.get().length > 0;
-  if (!hasData || forceLoader) {
+
+  // Only show the loading spinner on the very first load, or when explicitly forced
+  if (!initialLoadDone || forceLoader) {
     $dbLoading.set(true);
   }
 
@@ -55,6 +56,7 @@ export const refreshData = async (forceLoader = false) => {
   } finally {
     $dbLoading.set(false);
     isRefreshing = false;
+    initialLoadDone = true;
   }
 };
 
