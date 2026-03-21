@@ -86,7 +86,14 @@ export async function POST({ request }: { request: Request }) {
 
       // Limpiar todo lo anterior
       await db.delete(schema.activityParticipants).where(eq(schema.activityParticipants.activityId, currentActId));
-      await db.delete(schema.juegos).where(eq(schema.juegos.activityId, currentActId)); // Se lleva las posiciones por cascade, o las borramos si hace falta
+
+      const oldJuegos = await db.select().from(schema.juegos).where(eq(schema.juegos.activityId, currentActId));
+      if (oldJuegos.length > 0) {
+        const obsJIds = oldJuegos.map(j => j.id);
+        await db.delete(schema.juegoPosiciones).where(inArray(schema.juegoPosiciones.juegoId, obsJIds));
+      }
+      await db.delete(schema.juegos).where(eq(schema.juegos.activityId, currentActId));
+      
       await db.delete(schema.partidos).where(eq(schema.partidos.activityId, currentActId));
       await db.delete(schema.goles).where(eq(schema.goles.activityId, currentActId));
       await db.delete(schema.extras).where(eq(schema.extras.activityId, currentActId));
@@ -334,6 +341,7 @@ export async function PATCH({ request }: { request: Request }) {
         break;
       }
       case 'game_delete': {
+        await db.delete(schema.juegoPosiciones).where(eq(schema.juegoPosiciones.juegoId, data.id));
         await db.delete(schema.juegos).where(eq(schema.juegos.id, data.id));
         break;
       }
@@ -376,6 +384,7 @@ export async function PATCH({ request }: { request: Request }) {
         break;
       }
       case 'partido_delete': {
+        await db.delete(schema.goles).where(eq(schema.goles.matchId, data.id));
         await db.delete(schema.partidos).where(eq(schema.partidos.id, data.id));
         break;
       }
@@ -398,6 +407,21 @@ export async function DELETE({ request }: { request: Request }) {
   try {
     const body = await request.json();
     const { id } = body;
+
+    await db.delete(schema.activityParticipants).where(eq(schema.activityParticipants.activityId, id));
+    
+    const jj = await db.select().from(schema.juegos).where(eq(schema.juegos.activityId, id));
+    if (jj.length > 0) {
+      const jjIds = jj.map(j => j.id);
+      await db.delete(schema.juegoPosiciones).where(inArray(schema.juegoPosiciones.juegoId, jjIds));
+    }
+    await db.delete(schema.juegos).where(eq(schema.juegos.activityId, id));
+    
+    await db.delete(schema.partidos).where(eq(schema.partidos.activityId, id));
+    await db.delete(schema.goles).where(eq(schema.goles.activityId, id));
+    await db.delete(schema.extras).where(eq(schema.extras.activityId, id));
+    await db.delete(schema.invitaciones).where(eq(schema.invitaciones.activityId, id));
+
     await db.delete(schema.activities).where(eq(schema.activities.id, id));
     
     eventBus.emit('data-changed');

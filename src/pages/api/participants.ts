@@ -1,6 +1,6 @@
 import { db } from '../../lib/db';
-import { participants } from '../../lib/schema';
-import { eq } from 'drizzle-orm';
+import { participants, activityParticipants, goles, extras, invitaciones } from '../../lib/schema';
+import { eq, or } from 'drizzle-orm';
 import { eventBus } from '../../lib/eventBus';
 
 export async function GET() {
@@ -48,6 +48,18 @@ export async function DELETE({ request }: { request: Request }) {
   try {
     const body = await request.json();
     const { id } = body;
+
+    // Manual cascade deletes
+    await db.delete(activityParticipants).where(eq(activityParticipants.participantId, id));
+    await db.delete(goles).where(eq(goles.participantId, id));
+    await db.delete(extras).where(eq(extras.participantId, id));
+    await db.delete(invitaciones).where(
+      or(
+        eq(invitaciones.invitadorId, id),
+        eq(invitaciones.invitadoId, id)
+      )
+    );
+
     await db.delete(participants).where(eq(participants.id, id));
     eventBus.emit('data-changed');
     return new Response(JSON.stringify({ success: true }), {
@@ -55,7 +67,7 @@ export async function DELETE({ request }: { request: Request }) {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (e) {
-    return new Response(JSON.stringify({ error: e.message }), {
+    return new Response(JSON.stringify({ error: (e as Error).message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
