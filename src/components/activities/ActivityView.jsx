@@ -152,27 +152,41 @@ export function ActivityViewModal({ db, act, onEdit, onClose }) {
                       <Gamepad2 className="w-4 h-4" /> Juegos Mixtos
                     </div>
                     {(act.juegos || []).map((j, gi) => {
-                      const sorted = activeTeams.map((t) => ({ t, pos: j.pos?.[t] || 99 })).filter((x) => x.pos !== 99).sort((a, b) => a.pos - b.pos);
                       const medals = ['', '🥇', '🥈', '🥉', '4°', '5°', '6°'];
+                      // Agrupar equipos por posición (igual que JuegoCard en el form)
+                      const posToTeams = {};
+                      Object.entries(j.pos || {}).forEach(([t, p]) => {
+                        if (!posToTeams[p]) posToTeams[p] = [];
+                        posToTeams[p].push(t);
+                      });
+                      const usedPositions = Object.keys(posToTeams).map(Number).sort((a, b) => a - b);
                       return (
                         <div key={j.id} className="bg-white rounded-xl border border-surface-dark mb-3 overflow-hidden">
                           <div className="p-3 border-b border-surface-dark font-bold">
                             {j.nombre || `Juego ${gi + 1}`}
                           </div>
-                          <div className="flex">
-                            {sorted.map(({ t, pos }) => (
-                              <div
-                                key={t}
-                                className={cn('flex-1 p-3 text-center', pos === 1 ? 'bg-surface-dark' : '')}
-                              >
-                                <div className="text-xl mb-1">{medals[pos]}</div>
-                                <div className="font-black mt-1" style={{ color: TEAM_COLORS[t] }}>
-                                  {t}
-                                </div>
-                                <div className="text-xs text-text-muted">+{PTS.rec[pos] || 0}</div>
-                              </div>
-                            ))}
-                          </div>
+                          {usedPositions.length === 0 ? (
+                            <div className="p-3 text-xs text-text-muted text-center opacity-60">Sin posiciones registradas</div>
+                          ) : (
+                            <div className="flex flex-col gap-1 p-2">
+                              {usedPositions.map((pos) => {
+                                const teams = posToTeams[pos];
+                                return (
+                                  <div key={pos} className={cn('flex items-center gap-2 px-2 py-1.5 rounded-lg', pos === 1 ? 'bg-surface-dark' : 'bg-background')}>
+                                    <span className="text-base w-6 text-center flex-shrink-0">{medals[pos] || `${pos}°`}</span>
+                                    <div className="flex gap-1.5 flex-wrap flex-1">
+                                      {teams.map((t) => (
+                                        <span key={t} className="font-black text-sm px-2 py-0.5 rounded-lg" style={{ color: TEAM_COLORS[t], backgroundColor: getTeamBg(t) }}>
+                                          {t}
+                                        </span>
+                                      ))}
+                                    </div>
+                                    <span className="text-xs text-text-muted font-bold flex-shrink-0">+{PTS.rec[pos] || 0} pts</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       );
                     })}

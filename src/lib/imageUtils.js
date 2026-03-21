@@ -11,8 +11,6 @@ function autoOrientImage(ctx, canvas, image) {
   const width = canvas.width;
   const height = canvas.height;
   
-  ctx.drawImage(image, 0, 0, width, height);
-  
   try {
     const imgData = ctx.getImageData(0, 0, width, height);
     const data = imgData.data;

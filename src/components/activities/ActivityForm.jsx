@@ -242,7 +242,7 @@ function TabAsistencia({ act, A, Q, db, onSaveParticipant }) {
     const age = getEdad(newPlayer.fechaNacimiento);
     if (age < 0 || age > 100) return toast.error('La fecha de nacimiento no es válida');
     if (age < 12 || age > 18) {
-      if (!(await confirmDialog(`¿Estás seguro que querés agregar a ${newPlayer.nombre} con ${age} años?`))) return;
+      if (!(await confirmDialog(`¿Estás seguro que querés agregar a ${newPlayer.nombre} con ${age} años?`, { confirmText: 'Agregar', isDestructive: false }))) return;
     }
 
     if (isSubmittingPlayer) return;
@@ -470,9 +470,14 @@ function TabEquipos({ act, A, Q, db }) {
 }
 
 function TabJuegos({ act, A, Q }) {
-  const add = () => {
-    const nj = { id: Date.now(), nombre: '', pos: {} };
-    Q('game_add', nj, 'juegos', [...(act.juegos || []), nj]);
+  const add = async () => {
+    const tempId = Date.now();
+    const nj = { id: tempId, nombre: '', pos: {} };
+    const result = await Q('game_add', nj, 'juegos', [...(act.juegos || []), nj]);
+    // Replace the temp ID with the real DB-generated ID
+    if (result?.id) {
+      A('juegos', [...(act.juegos || []), { ...nj, id: result.id }]);
+    }
   };
   const del = (id) => Q('game_delete', { id }, 'juegos', (act.juegos || []).filter(j => j.id !== id));
   const updN = (id, v) => A('juegos', (act.juegos || []).map(j => j.id === id ? { ...j, nombre: v } : j));

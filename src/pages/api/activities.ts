@@ -334,11 +334,14 @@ export async function PATCH({ request }: { request: Request }) {
         break;
       }
       case 'game_add': {
-        await db.insert(schema.juegos).values({
+        const gameResult = await db.insert(schema.juegos).values({
           activityId,
           nombre: data.nombre || '',
+        }).returning({ id: schema.juegos.id });
+        return new Response(JSON.stringify({ success: true, id: gameResult[0].id }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
         });
-        break;
       }
       case 'game_delete': {
         await db.delete(schema.juegoPosiciones).where(eq(schema.juegoPosiciones.juegoId, data.id));

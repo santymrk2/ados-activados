@@ -1,6 +1,11 @@
 import { toast } from 'sonner';
 
-export function confirmDialog(message) {
+export function confirmDialog(message, options = {}) {
+  const { 
+    confirmText = 'Eliminar', 
+    isDestructive = true 
+  } = options;
+  
   return new Promise((resolve) => {
     toast.custom(
       (t) => (
@@ -12,9 +17,9 @@ export function confirmDialog(message) {
                 toast.dismiss(t);
                 resolve(true);
               }}
-              className="flex-1 py-2 bg-red-500 text-white font-bold rounded-lg"
+              className={`flex-1 py-2 text-white font-bold rounded-lg ${isDestructive ? 'bg-red-500' : 'bg-primary'}`}
             >
-              Eliminar
+              {confirmText}
             </button>
             <button
               onClick={() => {

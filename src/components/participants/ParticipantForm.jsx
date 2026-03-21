@@ -41,7 +41,7 @@ export function ParticipantFormModal({ db, initial, onClose, onSave }) {
     const age = getEdad(form.fechaNacimiento);
     if (age < 0 || age > 100) return toast.error('La fecha de nacimiento no es válida');
     if (age < 12 || age > 18) {
-      if (!(await confirmDialog(`¿Estás seguro que querés agregar a ${form.nombre} con una edad de ${age} años?`))) {
+      if (!(await confirmDialog(`¿Estás seguro que querés agregar a ${form.nombre} con una edad de ${age} años?`, { confirmText: 'Agregar', isDestructive: false }))) {
         return;
       }
     }
