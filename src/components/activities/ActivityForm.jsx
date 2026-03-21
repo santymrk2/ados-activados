@@ -82,6 +82,18 @@ export function ActivityFormModal({ db, initial, onClose, onSave, onQuickUpdate,
     };
   }, [act, doSave]);
 
+  useEffect(() => {
+    if (!initial || !initial.id || saveStatus !== 'saved') return;
+
+    // Sincronizar con datos del servidor solo si hay cambios y no estamos editando/guardando
+    const initialStr = JSON.stringify(initial);
+    const actStr = JSON.stringify(act);
+
+    if (initialStr !== actStr) {
+      setAct(initial);
+    }
+  }, [initial, saveStatus]);
+
   const statusIndicator = {
     saved: { color: 'text-accent', label: 'Guardado' },
     saving: { color: 'text-yellow-500', label: 'Guardando...' },
