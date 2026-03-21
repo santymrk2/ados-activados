@@ -1,28 +1,17 @@
 import { db } from '../../lib/db';
 import { participants } from '../../lib/schema';
-import { SEED_PARTICIPANTS } from '../../lib/constants';
 import { eq } from 'drizzle-orm';
 import { eventBus } from '../../lib/eventBus';
 
 export async function GET() {
   const result = await db.select().from(participants);
-  if (result.length === 0) {
-    try {
-      await db.insert(participants).values(SEED_PARTICIPANTS);
-      const newResult = await db.select().from(participants);
-      return new Response(JSON.stringify(newResult), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    } catch (e) { }
-  }
   return new Response(JSON.stringify(result), {
     status: 200,
     headers: { 'Content-Type': 'application/json' }
   });
 }
 
-export async function POST({ request }) {
+export async function POST({ request }: { request: Request }) {
   try {
     const body = await request.json();
     const { data, isNew, invitadorId } = body;
@@ -48,14 +37,14 @@ export async function POST({ request }) {
       });
     }
   } catch (e) {
-    return new Response(JSON.stringify({ error: e.message }), {
+    return new Response(JSON.stringify({ error: (e as Error).message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
   }
 }
 
-export async function DELETE({ request }) {
+export async function DELETE({ request }: { request: Request }) {
   try {
     const body = await request.json();
     const { id } = body;

@@ -9,6 +9,7 @@ import { Empty, Section } from '../ui/Common';
 import { Avatar } from '../ui/Avatar';
 import { SexBadge, RankBadge } from '../ui/Badges';
 import { HelpInfo } from '../ui/HelpInfo';
+import { PlayerInfoModal } from '../ui/PlayerInfoModal';
 import { cn, formatDate } from '../../lib/utils';
 
 const PODIUM_COLORS = [
@@ -409,6 +410,8 @@ function PartidoReadOnlyCard({ part }) {
 }
 
 function TeamTableViewReadOnly({ act, participants }) {
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+
   const present = participants
     .filter((p) => act.asistentes.includes(p.id))
     .sort((a, b) => `${a.apellido} ${a.nombre}`.localeCompare(`${b.apellido} ${b.nombre}`));
@@ -464,7 +467,12 @@ function TeamTableViewReadOnly({ act, participants }) {
                 {tableData.map(({ team, women }) => {
                   const p = women[rowIdx];
                   return (
-                    <td key={team} className="px-1 py-0.5" style={{ borderRight: `2px solid ${TEAM_COLORS[team]}22`, backgroundColor: rowIdx % 2 === 0 ? '#fdf2f822' : '#fff0f799' }}>
+                    <td 
+                      key={team} 
+                      className="px-1 py-0.5 cursor-pointer hover:bg-black/5 transition-colors" 
+                      style={{ borderRight: `2px solid ${TEAM_COLORS[team]}22`, backgroundColor: rowIdx % 2 === 0 ? '#fdf2f822' : '#fff0f799' }}
+                      onClick={() => p && setSelectedPlayer(p)}
+                    >
                       {p ? (
                         <div className="flex items-center gap-1.5 py-0.5">
                           <Avatar p={p} size={20} />
@@ -491,7 +499,12 @@ function TeamTableViewReadOnly({ act, participants }) {
                 {tableData.map(({ team, men }) => {
                   const p = men[rowIdx];
                   return (
-                    <td key={team} className="px-1 py-0.5" style={{ borderRight: `2px solid ${TEAM_COLORS[team]}22`, backgroundColor: rowIdx % 2 === 0 ? '#eff6ff22' : '#e0f2fe44' }}>
+                    <td 
+                      key={team} 
+                      className="px-1 py-0.5 cursor-pointer hover:bg-black/5 transition-colors" 
+                      style={{ borderRight: `2px solid ${TEAM_COLORS[team]}22`, backgroundColor: rowIdx % 2 === 0 ? '#eff6ff22' : '#e0f2fe44' }}
+                      onClick={() => p && setSelectedPlayer(p)}
+                    >
                       {p ? (
                         <div className="flex items-center gap-1.5 py-0.5">
                           <Avatar p={p} size={20} />
@@ -514,6 +527,7 @@ function TeamTableViewReadOnly({ act, participants }) {
           </tbody>
         </table>
       </div>
+      <PlayerInfoModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
     </div>
   );
 }

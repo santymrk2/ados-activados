@@ -1,11 +1,13 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { TEAMS, TEAM_COLORS, getTeamBg } from '../../lib/constants';
 import { SexBadge } from './Badges';
 import { Avatar } from './Avatar';
 import { Empty } from './Common';
+import { PlayerInfoModal } from './PlayerInfoModal';
 import { cn } from '../../lib/utils';
 
 export function TeamTable({ participants, act, onTeamChange, readOnly = false }) {
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
   const present = useMemo(
     () =>
       participants
@@ -31,9 +33,13 @@ export function TeamTable({ participants, act, onTeamChange, readOnly = false })
 
   if (present.length === 0) return <Empty text="Sin asistentes en esta actividad" />;
 
-  const handleTeamClick = (pid, team) => {
-    if (readOnly || !onTeamChange) return;
-    onTeamChange(pid, team);
+  const handleTeamClick = (p, team) => {
+    if (readOnly) {
+      if (p) setSelectedPlayer(p);
+      return;
+    }
+    if (!onTeamChange) return;
+    onTeamChange(p?.id, team);
   };
 
   return (
@@ -87,12 +93,11 @@ export function TeamTable({ participants, act, onTeamChange, readOnly = false })
                     <td
                       key={team}
                       className={cn(
-                        'px-1 py-0.5',
-                        readOnly ? '' : 'cursor-pointer hover:bg-pink-50',
+                        'px-1 py-0.5 cursor-pointer hover:bg-pink-50',
                         rowIdx % 2 === 0 ? 'bg-pink-50/10' : 'bg-pink-100/30'
                       )}
                       style={{ borderRight: `2px solid ${TEAM_COLORS[team]}22` }}
-                      onClick={() => !readOnly && handleTeamClick(p?.id, team)}
+                      onClick={() => handleTeamClick(p, team)}
                     >
                       {p ? (
                         <div className="flex items-center gap-1.5 py-0.5">
@@ -131,12 +136,11 @@ export function TeamTable({ participants, act, onTeamChange, readOnly = false })
                     <td
                       key={team}
                       className={cn(
-                        'px-1 py-0.5',
-                        readOnly ? '' : 'cursor-pointer hover:bg-cyan-50',
+                        'px-1 py-0.5 cursor-pointer hover:bg-cyan-50',
                         rowIdx % 2 === 0 ? 'bg-cyan-50/10' : 'bg-cyan-100/30'
                       )}
                       style={{ borderRight: `2px solid ${TEAM_COLORS[team]}22` }}
-                      onClick={() => !readOnly && handleTeamClick(p?.id, team)}
+                      onClick={() => handleTeamClick(p, team)}
                     >
                       {p ? (
                         <div className="flex items-center gap-1.5 py-0.5">
@@ -168,6 +172,7 @@ export function TeamTable({ participants, act, onTeamChange, readOnly = false })
           </tbody>
         </table>
       </div>
+      <PlayerInfoModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
     </div>
   );
 }
